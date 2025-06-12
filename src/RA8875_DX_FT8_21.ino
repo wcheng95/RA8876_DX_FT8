@@ -60,8 +60,17 @@ AudioRecordQueue queue1;       // xy=1027,149
 AudioAmplifier left_amp;
 AudioAmplifier right_amp;
 
-AudioConnection c1(i2s1, 0, preProcessor, 0);
-AudioConnection c2(i2s1, 1, preProcessor, 1);
+AudioAmplifier           in_left_amp;
+AudioAmplifier           in_right_amp;
+
+AudioConnection c11(i2s1, 0,  in_left_amp, 0);
+AudioConnection c12(i2s1, 1,  in_right_amp, 0);
+
+AudioConnection c13(in_left_amp, 0, preProcessor, 0);
+AudioConnection c14(in_right_amp, 0, preProcessor, 1);
+
+//AudioConnection c1(i2s1, 0, preProcessor, 0);
+//AudioConnection c2(i2s1, 1, preProcessor, 1);
 
 AudioConnection patchCord1(preProcessor, 0, multiply1, 0);
 AudioConnection patchCord2(preProcessor, 1, multiply2, 1);
@@ -226,6 +235,7 @@ void setup(void)
   mixer2.gain(1, 0.4);
 
   set_RF_Gain(RF_Gain);
+  set_Attenuator_Gain(1.0);
 
   left_amp.gain(0.2);
   right_amp.gain(0.2);

@@ -50,6 +50,7 @@
             transmit_sequence();
             sgtl5000_1.lineInLevel(0);
             set_RF_Gain(1);
+            set_Attenuator_Gain(0.1);
             delay(10);
             si5351.output_enable(SI5351_CLK0, 1);
             set_xmit_button(true);
@@ -61,6 +62,7 @@
          delay(10);
          sgtl5000_1.lineInLevel(RX_volume);
          set_RF_Gain(RF_Gain);
+         set_Attenuator_Gain(1.0);
          set_xmit_button(false);
          }
         
@@ -74,6 +76,7 @@
         si5351.output_enable(SI5351_CLK0, 0);
         sgtl5000_1.lineInLevel(RX_volume);
         set_RF_Gain(RF_Gain);
+        set_Attenuator_Gain(1.0);
         }
         
         void ft8_transmit_sequence(void){
@@ -81,6 +84,7 @@
         si5351.set_freq(F_Long, SI5351_CLK0);
         sgtl5000_1.lineInLevel(0);
         set_RF_Gain(1);
+        set_Attenuator_Gain(0.1);
         delay(10);
         si5351.output_enable(SI5351_CLK0, 1);
        }

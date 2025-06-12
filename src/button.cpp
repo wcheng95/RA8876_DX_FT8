@@ -34,6 +34,8 @@ extern RA8876_t3 tft;
 extern AudioControlSGTL5000 sgtl5000_1;
 extern Si5351 si5351;
 extern AudioAmplifier amp1;
+extern AudioAmplifier        in_left_amp;
+extern AudioAmplifier        in_right_amp;
 extern uint16_t currentFrequency;
 #define USB 2
 
@@ -936,10 +938,24 @@ void receive_sequence(void)
 void set_RF_Gain(int rfgain)
 {
 
+  //float gain_setpoint;
+  //gain_setpoint = (float)rfgain / 32.0;
+  //amp1.gain(gain_setpoint);
+
   float gain_setpoint;
-  gain_setpoint = (float)rfgain / 32.0;
+  float DSP_Gain = 2.0;
+  gain_setpoint = ((float)rfgain / 32.0) * DSP_Gain ;
   amp1.gain(gain_setpoint);
+
 }
+
+  void set_Attenuator_Gain(float att_gain){
+  
+        in_left_amp.gain(att_gain);
+        in_right_amp.gain(att_gain);
+    }
+
+
 
 void terminate_transmit_armed(void)
 {

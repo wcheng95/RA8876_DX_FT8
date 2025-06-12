@@ -72,6 +72,8 @@ void start_Si5351(void);
 
 void set_RF_Gain(int rfgain);
 
+void set_Attenuator_Gain(float att_gain);
+
 void Set_Cursor_Frequency(void);
 
 void Init_BoardVersionInput(void);
