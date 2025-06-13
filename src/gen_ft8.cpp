@@ -23,7 +23,6 @@ extern RA8876_t3 tft;
 #include <string.h>
 #include "decode_ft8.h"
 #include "display.h"
-#include "locator.h"
 #include "traffic_manager.h"
 #include "ADIF.h"
 

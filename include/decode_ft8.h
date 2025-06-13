@@ -26,10 +26,10 @@ typedef struct
     int sync_score;
     int snr;
     int received_snr;
-    int distance;
-    int bearing;
-    int map_distance;
-    int map_bearing;
+    //int distance;
+    //int bearing;
+    //int map_distance;
+    //int map_bearing;
     char target_locator[7];
     int slot;
     int RR73;
@@ -50,9 +50,9 @@ typedef struct
     int RSL;
     int received_RSL;
     int RR73;
-    int distance;
-    int map_distance;
-    int map_bearing;
+    //int distance;
+    //int map_distance;
+    //int map_bearing;
     Sequence sequence;
 } Calling_Station;
 
@@ -69,5 +69,6 @@ void clear_decoded_messages(void);
 void clear_log_stored_data(void);
 
 int strindex(const char *s, const char *t);
+int validate_locator(const char *QSO_locator);
 
 #endif /* DECODE_FT8_H_ */

@@ -45,4 +45,27 @@ void draw_vector(float distance, float bearing, int size, int color);
 void draw_QTH(void);
 void draw_stored_entries(void);
 
+
+void set_Station_Coordinates(char station[]);
+void process_locator(char locator[]);
+double distance(double lat1, double lon1, double lat2, double lon2);
+double bearing (double lat1, double long1, double lat2, double long2);
+float Target_Distance(char target[]);
+float Target_Bearing(char target[]);
+
+float Map_Distance(char target[]);
+float Map_Bearing(char target[]);
+        
+        
+        
+        
+
+
+
+
+
+
+
+
+
 #endif /* ADIF_H_ */

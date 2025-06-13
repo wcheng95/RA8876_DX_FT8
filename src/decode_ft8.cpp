@@ -24,6 +24,7 @@
 #include "ADIF.h"
 #include "button.h"
 
+
 extern RA8876_t3 tft;
 
 extern int left_hand_message;
@@ -37,7 +38,7 @@ const int kMax_decoded_messages = 20;
 size_t kMax_message_length = 20;
 const int kMin_score = 40; // Minimum sync score threshold for candidates
 
-static int validate_locator(const char *QSO_locator);
+//static int validate_locator(const char *QSO_locator);
 int strindex(const char *s, const char *t);
 
 extern uint8_t export_fft_power[];
@@ -68,18 +69,6 @@ extern int Beacon_On;
 extern int Station_RSL;
 extern char Target_Locator[]; // four character locator  + /0
 extern char Station_Call[];
-
-extern float Station_Latitude, Station_Longitude;
-extern float Target_Latitude, Target_Longitude;
-
-extern float Target_Distance(const char *target);
-extern float Target_Bearing(const char *target);
-extern float Map_Distance(const char *target);
-extern float Map_Bearing(const char *target);
-
-int ADIF_distance;
-int ADIF_map_distance;
-int ADIF_map_bearing;
 
 extern int QSO_Fix;
 extern int slot_state;
@@ -168,8 +157,6 @@ int ft8_decode(void)
 
     int raw_RSL;
     int display_RSL;
-    float distance;
-    float bearing;
     int received_RSL;
 
     getTeensy3Time();
@@ -205,25 +192,10 @@ int ft8_decode(void)
 
         if (validate_locator(Test_Locator) == 1)
         {
-          distance = Target_Distance(Test_Locator);
-          new_decoded[num_decoded].distance = (int)distance;
-          bearing = Target_Bearing(Test_Locator);
-          new_decoded[num_decoded].bearing = (int)bearing;
-
-          distance = Map_Distance(Test_Locator);
-          new_decoded[num_decoded].map_distance = (int)distance;
-          bearing = Map_Bearing(Test_Locator);
-          new_decoded[num_decoded].map_bearing = (int)bearing;
-
           strcpy(new_decoded[num_decoded].target_locator, Test_Locator);
           new_decoded[num_decoded].sequence = Seq_Locator;
         }
-        else
-        {
-          new_decoded[num_decoded].distance = 0;
-          new_decoded[num_decoded].bearing = 0;
-        }
-
+   
         strcpy(FT8_Message, new_decoded[num_decoded].field3);
 
         if (strindex(FT8_Message, "73") >= 0 || strindex(FT8_Message, "RR73") >= 0 || strindex(FT8_Message, "RRR") >= 0)
@@ -298,22 +270,6 @@ void display_messages(int decoded_messages)
   }
 }
 
-void display_details(int decoded_messages)
-{
-  char message[48];
-
-  tft.fillRect(0, 100, 320, 400, BLACK);
-
-  for (int i = 0; i < decoded_messages && i < message_limit; i++)
-  {
-    sprintf(message, "%7s %7s %4s %4i %3i %4i", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3, new_decoded[i].freq_hz, new_decoded[i].snr, new_decoded[i].distance);
-
-    tft.setFontSize(1, true);
-    tft.textColor(YELLOW, BLACK);
-    tft.setCursor(0, 100 + i * 40);
-    tft.write(message, 36);
-  }
-}
 
 int validate_locator(const char *QSO_locator)
 {
@@ -434,9 +390,6 @@ int Check_Calling_Stations(int num_decoded)
         if (Beacon_On == 1)
           Target_RSL = new_decoded[i].snr;
 
-        ADIF_distance = new_decoded[i].distance;
-        ADIF_map_distance = new_decoded[i].map_distance;
-        ADIF_map_bearing = new_decoded[i].map_bearing;
         strcpy(Target_Locator, new_decoded[i].target_locator);
 
         if (new_decoded[i].received_snr != 99)
@@ -457,9 +410,6 @@ int Check_Calling_Stations(int num_decoded)
         strcpy(Answer_CQ[num_calls].locator, new_decoded[i].target_locator);
         Answer_CQ[num_calls].RSL = Target_RSL;
         Answer_CQ[num_calls].received_RSL = Station_RSL;
-        Answer_CQ[num_calls].distance = ADIF_distance;
-        Answer_CQ[num_calls].map_distance = ADIF_map_distance;
-        Answer_CQ[num_calls].map_bearing = ADIF_map_bearing;
         Answer_CQ[num_calls].sequence = new_decoded[i].sequence;
 
         num_calls++;
@@ -475,10 +425,6 @@ int Check_Calling_Stations(int num_decoded)
 
         if (new_decoded[i].RR73 == 1)
           RR73_sent = 1;
-
-        ADIF_distance = Answer_CQ[old_call_address].distance;
-        ADIF_map_distance = Answer_CQ[old_call_address].map_distance;
-        ADIF_map_bearing = Answer_CQ[old_call_address].map_bearing;
 
         strcpy(Target_Call, Answer_CQ[old_call_address].call);
         strcpy(Target_Locator, Answer_CQ[old_call_address].locator);
@@ -538,9 +484,7 @@ void process_selected_Station(int stations_decoded, int TouchIndex)
     Target_RSL = new_decoded[TouchIndex].snr;
     target_slot = new_decoded[TouchIndex].slot;
     target_freq = new_decoded[TouchIndex].freq_hz;
-    ADIF_distance = new_decoded[TouchIndex].distance;
-    ADIF_map_distance = new_decoded[TouchIndex].map_distance;
-    ADIF_map_bearing = new_decoded[TouchIndex].map_bearing;
+
 
     if (QSO_Fix == 1)
       set_QSO_Xmit_Freq(target_freq);

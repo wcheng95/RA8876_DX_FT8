@@ -17,7 +17,7 @@
 #include "arm_math.h"
 #include "display.h"
 #include "button.h"
-#include "locator.h"
+//#include "locator.h"
 #include "traffic_manager.h"
 #include "Arduino.h"
 #include "AudioStream.h"
@@ -68,9 +68,6 @@ AudioConnection c12(i2s1, 1,  in_right_amp, 0);
 
 AudioConnection c13(in_left_amp, 0, preProcessor, 0);
 AudioConnection c14(in_right_amp, 0, preProcessor, 1);
-
-//AudioConnection c1(i2s1, 0, preProcessor, 0);
-//AudioConnection c2(i2s1, 1, preProcessor, 1);
 
 AudioConnection patchCord1(preProcessor, 0, multiply1, 0);
 AudioConnection patchCord2(preProcessor, 1, multiply2, 1);
@@ -301,7 +298,8 @@ void loop()
 
     master_decoded = ft8_decode();
     if (master_decoded > 0)
-      display_messages(master_decoded);
+     display_messages(master_decoded);
+ 
 
     if (Beacon_On == 1)
       service_Beacon_mode(master_decoded);
@@ -419,7 +417,7 @@ void parse_NEMA(void)
       if (strindex(Locator, locator) < 0)
       {
         for (int i = 0; i < 11; i++)
-          Locator[i] = locator[i];
+        Locator[i] = locator[i];
         set_Station_Coordinates(Locator);
         display_station_data(820, 0);
       }

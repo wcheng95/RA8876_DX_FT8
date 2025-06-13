@@ -9,7 +9,6 @@
 #include "Process_DSP.h"
 #include <EEPROM.h>
 #include <Wire.h>
-#include "locator.h"
 #include <TimeLib.h>
 #include "options.h"
 #include "ADIF.h"

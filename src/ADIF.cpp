@@ -49,17 +49,25 @@ extern int Station_RSL;
 
 uint16_t scaled_distance;
 
-extern int ADIF_distance;
-extern int ADIF_map_distance;
-extern int ADIF_map_bearing;
+int ADIF_distance;
+int ADIF_map_distance;
+int ADIF_map_bearing;
 
 extern int16_t map_width;
 extern int16_t map_heigth;
 extern int16_t map_center_x;
 extern int16_t map_center_y;
 
-extern float Map_Distance(const char *target);
-extern float Map_Bearing(const char *target);
+double deg2rad(double deg);
+double rad2deg(double rad);
+
+double deg2rad(double deg);
+double rad2deg(double rad);
+        
+float Latitude, Longitude;
+float Station_Latitude, Station_Longitude;
+float Map_Latitude, Map_Longitude;
+float Target_Latitude, Target_Longitude;
 
 File Log_File;
 
@@ -151,8 +159,16 @@ void write_ADIF_Log()
 
   write_log_data(log_line);
 
+  if(validate_locator(Target_Locator))
+  ADIF_distance = Target_Distance(Target_Locator);
+  else
+  ADIF_distance = 0;
+
   if (ADIF_distance > 0)
   {
+    ADIF_map_distance = Map_Distance(Target_Locator);
+    ADIF_map_bearing = Map_Bearing(Target_Locator);
+
     draw_vector((float)ADIF_map_distance, (float)ADIF_map_bearing, 3, 3);
     stored_log_entries[number_logged].ADIF_map_distance = ADIF_map_distance;
     stored_log_entries[number_logged].ADIF_map_bearing = ADIF_map_bearing;
@@ -353,7 +369,145 @@ void draw_QTH(void)
 
 void draw_Map_Center(void)
 {
-
   tft.drawLine(map_center_x - 10, map_center_y, map_center_x + 10, map_center_y, RED);
   tft.drawLine(map_center_x, map_center_y - 10, map_center_x, map_center_y + 10, RED);
 }
+
+
+
+        
+        #include <math.h>
+        #include "arm_math.h"
+        
+        const double EARTH_RAD = 6371;  //radius in km
+
+        void set_Station_Coordinates(char station[]){
+        
+        	process_locator(station);
+        	Station_Latitude = Latitude;
+        	Station_Longitude = Longitude;
+        }
+        
+        float Target_Bearing(char target[]) {
+        
+          float Target_Bearing;
+          process_locator(target);
+          Target_Latitude = Latitude;
+          Target_Longitude = Longitude;
+        
+          Target_Bearing = (float) bearing((double)Station_Latitude,(double)Station_Longitude,(double)Target_Latitude,(double)Target_Longitude);
+          return Target_Bearing;
+        }
+        
+        float Target_Distance(char target[]) {
+        
+        	float Target_Distance;
+        	process_locator(target);
+        	Target_Latitude = Latitude;
+        	Target_Longitude = Longitude;
+         
+        	Target_Distance = (float) distance((double)Station_Latitude,(double)Station_Longitude,(double)Target_Latitude,(double)Target_Longitude);
+        
+        	return Target_Distance;
+        }
+        
+          float Map_Bearing(char target[]) {
+
+          process_locator(map_locator);
+        
+          Map_Latitude = Latitude;
+          Map_Longitude = Longitude;
+          
+          float Map_Bearing;
+          process_locator(target);
+          Target_Latitude = Latitude;
+          Target_Longitude = Longitude;
+        
+          Map_Bearing = (float) bearing((double)Map_Latitude,(double)Map_Longitude,(double)Target_Latitude,(double)Target_Longitude);
+          return Map_Bearing;
+          }
+        
+          float Map_Distance(char target[]) {
+
+          process_locator(map_locator);
+        
+          Map_Latitude = Latitude;
+          Map_Longitude = Longitude;
+        
+          float Map_Distance;
+          process_locator(target);
+          Target_Latitude = Latitude;
+          Target_Longitude = Longitude;
+         
+          Map_Distance = (float) distance((double)Map_Latitude,(double)Map_Longitude,(double)Target_Latitude,(double)Target_Longitude);
+        
+          return Map_Distance;
+         }
+        
+        
+           void process_locator(char locator[]) {
+        
+        	uint8_t A1, A2, N1, N2;
+        	uint8_t A1_value, A2_value, N1_value, N2_value;
+        	float Latitude_1, Latitude_2, Latitude_3;
+        	float Longitude_1, Longitude_2, Longitude_3;
+        
+        	A1 = locator[0];
+        	A2 = locator[1];
+        	N1 = locator[2];
+        	N2= locator [3];
+        
+        	A1_value = A1-65;
+        	A2_value = A2-65;
+        	N1_value = N1- 48;
+        	N2_value = N2 - 48;
+        
+        	Latitude_1 = (float) A2_value * 10;
+        	Latitude_2 = (float) N2_value;
+        	Latitude_3 = (11.0/24.0 + 1.0/48.0) - 90.0;
+        	Latitude = Latitude_1 + Latitude_2 + Latitude_3;
+        
+        	Longitude_1 = (float)A1_value * 20.0;
+        	Longitude_2 = (float)N1_value * 2.0;
+        	Longitude_3 = 11.0/12.0 +  1.0/24.0;
+        	Longitude =  Longitude_1  +  Longitude_2 + Longitude_3 - 180.0;
+        
+          }
+        
+        
+        // distance (km) on earth's surface from point 1 to point 2
+            double distance(double lat1, double lon1, double lat2, double lon2) {
+            double lat1r = deg2rad(lat1);
+            double lon1r = deg2rad(lon1);
+            double lat2r = deg2rad(lat2);
+            double lon2r = deg2rad(lon2);
+            return acos(sin(lat1r) * sin(lat2r)+cos(lat1r) * cos(lat2r) * cos(lon2r-lon1r)) * EARTH_RAD;
+        }
+        
+          double bearing (double lat1, double long1, double lat2, double long2)
+          {
+        
+          double dlon = deg2rad(long2-long1);
+          lat1 = deg2rad(lat1);
+          lat2 = deg2rad(lat2);
+          double a1 = sin(dlon) * cos(lat2);
+          double a2 = sin(lat1) * cos(lat2) * cos(dlon);
+          a2 = cos(lat1) * sin(lat2) - a2;
+          a2 = atan2(a1, a2);
+          if (a2 < 0.0)
+          {
+            a2 += (2 * PI);
+          }
+             return rad2deg(a2);
+         }
+        
+        
+        // convert degrees to radians
+        double deg2rad(double deg)
+        {
+            return deg * (PI / 180.0);
+        }
+        
+        double rad2deg(double rad){
+          return (rad * 180) / PI;
+        }
