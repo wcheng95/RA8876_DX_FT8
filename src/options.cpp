@@ -4,7 +4,7 @@
 #include "button.h"
 #include "stdio.h"
 
-#define sentinel 1066
+#define sentinel 1948  // 1037, 1945, 1066, 
 
 int option_value;
 
@@ -20,7 +20,7 @@ extern int Map_Max;
 
 typedef struct
 {
-  const char *Name;
+  const char* Name;
   const int16_t Initial;
   const int16_t Minimum;
   const int16_t Maximum;

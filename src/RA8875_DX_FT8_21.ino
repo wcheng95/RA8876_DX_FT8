@@ -169,10 +169,14 @@ void setup(void)
 {
   Serial.begin(9600);
 
+  /*
   if (CrashReport) 
   {
     Serial.print(CrashReport);
   }
+  */
+
+
 
   Serial1.begin(9600);
 
@@ -194,10 +198,12 @@ void setup(void)
   tft.enableCapISR(true); // capacitive touch screen interrupt it's armed
   tft.fillRect(0, 0, 1024, 600, BLACK);
 
+  
+
   Init_BoardVersionInput();
   Check_Board_Version();
-
   Options_Initialize();
+  
 
   start_Si5351();
 
@@ -248,6 +254,15 @@ void setup(void)
   display_all_buttons();
   display_date(650, 30);
   display_station_data(820, 0);
+
+  /*
+  Init_BoardVersionInput();
+  delay(10);
+  Check_Board_Version();
+  delay(10);
+  Options_Initialize();
+  delay(10);
+  */
   display_revision_level();
 
   display_value(620, 559, RF_Gain);

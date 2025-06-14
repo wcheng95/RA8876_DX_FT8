@@ -183,7 +183,7 @@ void display_revision_level(void)
   tft.setCursor(0, 300);
   tft.write("Gears & Pulleys", 15);
   tft.setCursor(0, 330);
-  tft.write(" Are Aligned", 12);
+  tft.write("Are Aligned", 12);
 }
 
 void show_degrees(uint16_t x, uint16_t y, int32_t variable)
@@ -237,7 +237,7 @@ void Be_Patient(void)
   tft.textColor(YELLOW, BLACK);
   tft.setCursor(0, 120);
   tft.setFontSize(2, true);
-  tft.write("Patience, Syncing", 18);
+  tft.write("Patience, Synching", 19);
 }
 
 void update_message_log_display(int mode)

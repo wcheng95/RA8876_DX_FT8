@@ -58,9 +58,9 @@ int left_hand_message = 300;
 
 char xmit_messages[3][19];
 
-extern int ADIF_distance;
-extern int ADIF_map_distance;
-extern int ADIF_map_bearing;
+//extern int ADIF_distance;
+//extern int ADIF_map_distance;
+//extern int ADIF_map_bearing;
 
 extern int CQ_Mode_Index;
 extern int Free_Index;
@@ -158,11 +158,30 @@ void set_reply(ReplyID replyId)
   pack77(reply_message, packed);
   genft8(packed, tones);
 
+  clear_xmit_messages();
+
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
   tft.setCursor(left_hand_message, 520);
   tft.write(reply_message, 18);
 }
+
+/*
+void clear_generated_message_line(void);
+void clear_generated_message_line(void)
+{
+  char blank[] = "                  ";
+  tft.setFontSize(2, true);
+  tft.textColor(WHITE, BLACK);
+  tft.setCursor(left_hand_message, 520);
+  tft.write(blank, 18);
+}
+
+*/
+
+
+
+
 
 void clear_reply_message_box(void)
 {
@@ -225,6 +244,9 @@ void set_cq(void)
   pack77(CQ_message, packed);
   genft8(packed, tones);
 
+
+  erase_CQ();
+
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
   tft.setCursor(left_hand_message, 520);
@@ -233,8 +255,7 @@ void set_cq(void)
 
 void erase_CQ(void)
 {
-  char CQ_message[] = "                    ";
-
+  char CQ_message[] = "                  ";
   tft.setFontSize(2, true);
   tft.textColor(BLACK, BLACK);
   tft.setCursor(left_hand_message, 520);
@@ -243,7 +264,7 @@ void erase_CQ(void)
 
 void clear_qued_message(void)
 {
-  char qued_message[] = "                   ";
+  char qued_message[] = "                  ";
 
   tft.setFontSize(2, true);
   tft.setCursor(left_hand_message, 520);
@@ -252,7 +273,7 @@ void clear_qued_message(void)
 
 void clear_xmit_messages(void)
 {
-  char xmit_message[] = "                     ";
+  char xmit_message[] = "                  ";
 
   tft.setFontSize(2, true);
   tft.setCursor(left_hand_message, 520);

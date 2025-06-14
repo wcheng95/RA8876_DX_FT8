@@ -875,6 +875,8 @@ void init_RxSw_TxSw(void)
 void Init_BoardVersionInput(void)
 {
   pinMode(Board_PIN, INPUT_PULLUP);
+  delay(10);
+  digitalRead(Board_PIN);
 }
 
 void RLY_Select_20to40(void)
@@ -903,6 +905,7 @@ void Check_Board_Version(void)
     Init_BandSwitchOutput();
     Band_Minimum = _40M;
   }
+
 }
 
 void SelectFilterBlock(void)
