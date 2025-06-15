@@ -24,7 +24,6 @@
 #include "ADIF.h"
 #include "button.h"
 
-
 extern RA8876_t3 tft;
 
 extern int left_hand_message;
@@ -38,7 +37,6 @@ const int kMax_decoded_messages = 20;
 size_t kMax_message_length = 20;
 const int kMin_score = 40; // Minimum sync score threshold for candidates
 
-//static int validate_locator(const char *QSO_locator);
 int strindex(const char *s, const char *t);
 
 extern uint8_t export_fft_power[];
@@ -195,7 +193,7 @@ int ft8_decode(void)
           strcpy(new_decoded[num_decoded].target_locator, Test_Locator);
           new_decoded[num_decoded].sequence = Seq_Locator;
         }
-   
+
         strcpy(FT8_Message, new_decoded[num_decoded].field3);
 
         if (strindex(FT8_Message, "73") >= 0 || strindex(FT8_Message, "RR73") >= 0 || strindex(FT8_Message, "RRR") >= 0)
@@ -269,7 +267,6 @@ void display_messages(int decoded_messages)
     }
   }
 }
-
 
 int validate_locator(const char *QSO_locator)
 {
@@ -484,7 +481,6 @@ void process_selected_Station(int stations_decoded, int TouchIndex)
     Target_RSL = new_decoded[TouchIndex].snr;
     target_slot = new_decoded[TouchIndex].slot;
     target_freq = new_decoded[TouchIndex].freq_hz;
-
 
     if (QSO_Fix == 1)
       set_QSO_Xmit_Freq(target_freq);

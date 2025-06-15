@@ -175,58 +175,21 @@ void update_offset_waterfall(int offset)
     }
   }
 
-  /*
-  const size_t rowLength = 2 * (ft8_buffer - ft8_min_bin);
-  // two pixels for each datum point
-  uint16_t rowBuffer[rowLength * 2] = {0};
-
   for (int k = ft8_min_bin; k < ft8_buffer; k++)
   {
-    int x = 2 * (k - ft8_min_bin);
-    uint16_t color;
+
     if (xmit_flag == 0)
-    {
-      color = WFPalette[WF_index[k]];
-    }
+      tft.drawPixel(2 * (k - ft8_min_bin), WF_counter, WFPalette[WF_index[k]]);
     else
     {
-      if (x >= display_cursor_line && x <= display_cursor_line + 16)
-        color = WFPalette[WF_index[k]];
+      if (2 * (k - ft8_min_bin) >= display_cursor_line && 2 * (k - ft8_min_bin) <= display_cursor_line + 16)
+        tft.drawPixel(2 * (k - ft8_min_bin), WF_counter, WFPalette[WF_index[k]]);
       else
-        color = BLACK;
+        tft.drawPixel(2 * (k - ft8_min_bin), WF_counter, BLACK);
     }
 
-    // two pixels for each datum point
-    int row = x * 2;
-    rowBuffer[row + 1] = rowBuffer[row] = color;
+    tft.drawPixel(display_cursor_line, WF_counter, RED);
   }
-
-  // Draw the cursor line in red
-  if (display_cursor_line >= 0 && display_cursor_line < rowLength)
-  {
-    // two pixels for each datum point
-    int row = display_cursor_line * 2;
-    rowBuffer[row] = rowBuffer[row + 1] = RED;
-  }
-
-  tft.writeRect(0, WF_counter, rowLength, 1, rowBuffer);
-  */
-
-for (int k = ft8_min_bin; k< ft8_buffer; k++) {
-        
-      if(xmit_flag == 0 )
-      tft.drawPixel(2*(k-ft8_min_bin), WF_counter, WFPalette[WF_index[k]]);  
-      else {
-      if( 2*(k-ft8_min_bin) >= display_cursor_line && 2*(k-ft8_min_bin) <= display_cursor_line + 16) tft.drawPixel(2*(k-ft8_min_bin), WF_counter, WFPalette[WF_index[k]]);
-      else
-      tft.drawPixel(2*(k-ft8_min_bin), WF_counter, BLACK);   
-      }
-    
-       tft.drawPixel(display_cursor_line, WF_counter,RED);
-      
-      }
-
-
 
   WF_counter++;
 }

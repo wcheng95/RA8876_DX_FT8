@@ -58,9 +58,6 @@ int left_hand_message = 300;
 
 char xmit_messages[3][19];
 
-//extern int ADIF_distance;
-//extern int ADIF_map_distance;
-//extern int ADIF_map_bearing;
 
 extern int CQ_Mode_Index;
 extern int Free_Index;
@@ -69,7 +66,7 @@ void compose_messages(void)
 {
   const char seventy_three[] = "RR73";
   const char blank[] = "                  ";
-  
+
   char RSL[5];
   itoa(in_range(Target_RSL, -999, 9999), RSL, 10);
 
@@ -166,23 +163,6 @@ void set_reply(ReplyID replyId)
   tft.write(reply_message, 18);
 }
 
-/*
-void clear_generated_message_line(void);
-void clear_generated_message_line(void)
-{
-  char blank[] = "                  ";
-  tft.setFontSize(2, true);
-  tft.textColor(WHITE, BLACK);
-  tft.setCursor(left_hand_message, 520);
-  tft.write(blank, 18);
-}
-
-*/
-
-
-
-
-
 void clear_reply_message_box(void)
 {
   tft.fillRect(left_hand_message, 100, 290, 420, BLACK);
@@ -243,7 +223,6 @@ void set_cq(void)
 
   pack77(CQ_message, packed);
   genft8(packed, tones);
-
 
   erase_CQ();
 
