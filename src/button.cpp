@@ -772,9 +772,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[StandardCQ].state = 1;
       drawButton(StandardCQ);
     }
-    display_value(0, 300, StandardCQ);
-    display_value(100, 300, Free_Index);
-
+    
     break;
 
   case CQSOTA:
@@ -785,8 +783,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[CQSOTA].state = 1;
       drawButton(CQSOTA);
     }
-    display_value(0, 300, CQSOTA);
-    display_value(100, 300, Free_Index);
+
     break;
 
   case CQPOTA:
@@ -797,8 +794,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[CQPOTA].state = 1;
       drawButton(CQPOTA);
     }
-    display_value(0, 300, CQPOTA);
-    display_value(100, 300, Free_Index);
+
     break;
 
   case QRPP:
@@ -809,8 +805,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[QRPP].state = 1;
       drawButton(QRPP);
     }
-    display_value(0, 300, QRPP);
-    display_value(100, 300, Free_Index);
+
     break;
 
   case 21:
@@ -830,7 +825,6 @@ void executeCalibrationButton(uint16_t index)
       drawButton(FreeText1);
     }
 
-    display_value(100, 300, Free_Index);
     break;
 
   case FreeText2:
@@ -850,7 +844,6 @@ void executeCalibrationButton(uint16_t index)
       drawButton(FreeText2);
     }
 
-    display_value(100, 300, Free_Index);
     break;
   }
 }
@@ -968,7 +961,6 @@ int testButton(uint8_t index)
   if ((draw_x > sButtonData[index].x) && (draw_x < sButtonData[index].x + sButtonData[index].w) && (draw_y > sButtonData[index].y) && (draw_y <= sButtonData[index].y + sButtonData[index].h))
   {
 
-    tft.drawCircle(draw_x, draw_y, 5, YELLOW);
     return 1;
   }
   else
@@ -1126,7 +1118,6 @@ void reset_buttons(int btn1, int btn2, int btn3, const char *button_text)
   sButtonData[4].text0 = (char *)button_text;
   drawButton(4);
 
-  display_value(100, 300, CQ_Mode_Index);
 }
 
 void update_CQFree_button()
