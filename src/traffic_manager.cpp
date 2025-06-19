@@ -48,7 +48,7 @@ void tune_On_sequence(void)
   transmit_sequence();
   sgtl5000_1.lineInLevel(0);
   set_RF_Gain(1);
-  set_Attenuator_Gain(0.1);
+  set_Attenuator_Gain(0.05);
   delay(10);
   si5351.output_enable(SI5351_CLK0, 1);
   set_xmit_button(true);
@@ -84,7 +84,7 @@ void ft8_transmit_sequence(void)
   si5351.set_freq(F_Long, SI5351_CLK0);
   sgtl5000_1.lineInLevel(0);
   set_RF_Gain(1);
-  set_Attenuator_Gain(0.1);
+  set_Attenuator_Gain(0.05);
   delay(10);
   si5351.output_enable(SI5351_CLK0, 1);
 }
