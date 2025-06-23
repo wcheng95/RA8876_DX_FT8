@@ -10,7 +10,6 @@ extern RA8876_t3 tft;
 #include "ADIF.h"
 #include "button.h"
 
-
 File stationData_File;
 
 extern char file_name_string[24];
@@ -238,8 +237,8 @@ void update_message_log_display(int mode)
   }
 
   // Add new message at the bottom
-  strncpy(log_messages[max_log_messages - 1].message, current_message, sizeof(log_messages[0].message) - 1);
-  log_messages[max_log_messages - 1].message[sizeof(log_messages[0].message) - 1] = '\0'; // Ensure null termination
+  memcpy(log_messages[max_log_messages].message, current_message, sizeof(current_message));
+  log_messages[max_log_messages - 1].message[sizeof(log_messages[0].message) - 1] = 0; // Ensure null termination
   log_messages[max_log_messages - 1].text_color = (mode != 0);
 
   // Redraw the log area

@@ -13,22 +13,18 @@
 #define true 1
 #define false 0
 
-// Define FT8 symbol counts
-extern int ND;
-extern int NS;
-
-extern int NN;
-// Define the LDPC sizes
-extern int N;
-extern int K;
-
-extern int M;
-
-extern int K_BYTES;
+// Define constants directly
+const int ND = 58;               // Data symbols
+const int NS = 21;               // Sync symbols (3 @ Costas 7x7)
+const int NN = 79;               // Total channel symbols (79)
+const int N = 174;               // Number of bits in the encoded message
+const int K = 91;                // Number of payload bits
+const int M = N - K;             // Number of checksum bits
+const int K_BYTES = (K + 7) / 8; // Number of whole bytes needed to store K bits
 
 // Define CRC parameters
-extern uint16_t CRC_POLYNOMIAL; // CRC-14 polynomial without the leading (MSB) 1
-extern int CRC_WIDTH;
+const uint16_t CRC_POLYNOMIAL = 0x2757; // CRC-14 polynomial without the leading (MSB) 1
+const int CRC_WIDTH = 14;
 
 extern uint8_t tones[79];
 

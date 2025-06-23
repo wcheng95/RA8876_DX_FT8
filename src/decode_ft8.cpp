@@ -41,15 +41,6 @@ int strindex(const char *s, const char *t);
 
 extern uint8_t export_fft_power[];
 
-extern int ND;
-extern int NS;
-extern int NN;
-// Define the LDPC sizes
-extern int N;
-extern int K;
-extern int M;
-extern int K_BYTES;
-
 display_message_details display[10];
 
 Decode new_decoded[20];

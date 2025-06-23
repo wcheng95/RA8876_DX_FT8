@@ -1,5 +1,7 @@
 
 
+#include <string>
+
 #include <SPI.h>
 #include <TimeLib.h>
 #include <TinyGPS.h>
@@ -169,14 +171,10 @@ void setup(void)
 {
   Serial.begin(9600);
 
-  /*
   if (CrashReport) 
   {
     Serial.print(CrashReport);
   }
-  */
-
-
 
   Serial1.begin(9600);
 
@@ -198,17 +196,13 @@ void setup(void)
   tft.enableCapISR(true); // capacitive touch screen interrupt it's armed
   tft.fillRect(0, 0, 1024, 600, BLACK);
 
-  
-
   Init_BoardVersionInput();
   Check_Board_Version();
   Options_Initialize();
-  
 
   start_Si5351();
 
   init_DSP();
-  initalize_constants();
 
   set_startup_freq();
 
@@ -247,7 +241,7 @@ void setup(void)
 
   start_time = millis();
 
-  open_stationData_file();
+  load_station_data();
 
   set_Station_Coordinates(Locator);
 
@@ -431,8 +425,7 @@ void parse_NEMA(void)
 
       if (strindex(Locator, locator) < 0)
       {
-        for (int i = 0; i < 11; i++)
-        Locator[i] = locator[i];
+        memcpy(Locator, locator, sizeof(Locator));
         set_Station_Coordinates(Locator);
         display_station_data(820, 0);
       }

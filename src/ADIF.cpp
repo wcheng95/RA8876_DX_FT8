@@ -18,7 +18,6 @@
 #include "ADIF.h"
 #include "gen_ft8.h"
 #include "decode_ft8.h"
-#include <string> // For std::string
 
 // Named constants for ADIF and map calculations
 static const double EARTH_RADIUS_KM = 6371.0; // radius in km
@@ -29,7 +28,6 @@ static const double MAIDENHEAD_LAT_FIELD_WIDTH = 10.0;
 static const double MAIDENHEAD_LON_SQUARE_WIDTH = 2.0;
 static const double MAIDENHEAD_LAT_SQUARE_WIDTH = 1.0;
 static const char SPACE_CHAR = ' ';
-static const double EARTH_RAD = 6371; // radius in km
 
 #include "EM29_4000.h"  //the picture
 #include "EM29_8000.h"  //the picture
@@ -202,7 +200,7 @@ void Init_Log_File(void)
 {
   make_File_Name();
   delay(10); // Small delay for SD card operations
-  Open_Log_File();
+  Open_Log_File(file_name_string);
 }
 
 void write_ADIF_Log()
@@ -266,39 +264,27 @@ void draw_map(int16_t index)
   {
 
   case 0:
-
     drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)EM29_4000);
-
     break;
 
   case 1:
-
     drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)EM29_8000);
-
     break;
 
   case 2:
-
     drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)EM29_16000);
-
     break;
 
   case 3:
-
     drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)JM29_4000);
-
     break;
 
   case 4:
-
     drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)JM29_8000);
-
     break;
 
   case 5:
-
     drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)JM29_16000);
-
     break;
   }
 
@@ -368,7 +354,8 @@ void draw_QTH(void)
 
   QTH_Distance = Map_Distance(Locator); // Locator is Station Lacator which is changed when GPS coordinates indcate you are in differnt maidehead area
   QTH_Bearing = Map_Bearing(Locator);
-  // Locator is Station Lacator which is changed when GPS coordinates indcate you are in differnt maidehead area
+
+  // Locator is Station Locator which is changed when GPS coordinates indicate you are in differnt maidenhead area
 
   draw_vector(QTH_Distance, QTH_Bearing, 3, 2);
 }
@@ -381,7 +368,6 @@ void draw_Map_Center(void)
 
 void set_Station_Coordinates(char station[])
 {
-
   process_locator(station);
   Station_Latitude = Latitude;
   Station_Longitude = Longitude;
@@ -389,68 +375,52 @@ void set_Station_Coordinates(char station[])
 
 float Target_Bearing(char target[])
 {
-
-  float Target_Bearing;
   process_locator(target);
   Target_Latitude = Latitude;
   Target_Longitude = Longitude;
 
-  Target_Bearing = (float)bearing((double)Station_Latitude, (double)Station_Longitude, (double)Target_Latitude, (double)Target_Longitude);
-  return Target_Bearing;
+  return (float)bearing((double)Station_Latitude, (double)Station_Longitude, (double)Target_Latitude, (double)Target_Longitude);
 }
 
 float Target_Distance(char target[])
 {
-
-  float Target_Distance;
   process_locator(target);
   Target_Latitude = Latitude;
   Target_Longitude = Longitude;
 
-  Target_Distance = (float)distance((double)Station_Latitude, (double)Station_Longitude, (double)Target_Latitude, (double)Target_Longitude);
-
-  return Target_Distance;
+  return (float)distance((double)Station_Latitude, (double)Station_Longitude, (double)Target_Latitude, (double)Target_Longitude);
 }
 
 float Map_Bearing(char target[])
 {
-
   process_locator(map_locator);
 
   Map_Latitude = Latitude;
   Map_Longitude = Longitude;
 
-  float Map_Bearing;
   process_locator(target);
   Target_Latitude = Latitude;
   Target_Longitude = Longitude;
 
-  Map_Bearing = (float)bearing((double)Map_Latitude, (double)Map_Longitude, (double)Target_Latitude, (double)Target_Longitude);
-  return Map_Bearing;
+  return bearing((double)Map_Latitude, (double)Map_Longitude, (double)Target_Latitude, (double)Target_Longitude);
 }
 
 float Map_Distance(char target[])
 {
-
   process_locator(map_locator);
 
   Map_Latitude = Latitude;
   Map_Longitude = Longitude;
 
-  float Map_Distance;
   process_locator(target);
   Target_Latitude = Latitude;
   Target_Longitude = Longitude;
 
-  Map_Distance = (float)distance((double)Map_Latitude, (double)Map_Longitude, (double)Target_Latitude, (double)Target_Longitude);
-
-  return Map_Distance;
+  return distance((double)Map_Latitude, (double)Map_Longitude, (double)Target_Latitude, (double)Target_Longitude);
 }
 
 void process_locator(char locator[])
 {
-
-  // Use descriptive names for Maidenhead components
   uint8_t field_lon_char, field_lat_char, square_lon_char, square_lat_char;
   uint8_t field_lon_val, field_lat_val, square_lon_val, square_lat_val;
   float Latitude_1, Latitude_2, Latitude_3;
@@ -466,18 +436,18 @@ void process_locator(char locator[])
   square_lon_val = square_lon_char - '0';
   square_lat_val = square_lat_char - '0';
 
-  Latitude_1 = (float)A2_value * 10;
-  Latitude_2 = (float)N2_value;
+  Latitude_1 = (float)field_lat_val * 10;
+  Latitude_2 = (float)square_lat_val;
   Latitude_3 = (11.0 / 24.0 + 1.0 / 48.0) - 90.0;
   Latitude = Latitude_1 + Latitude_2 + Latitude_3;
 
-  Longitude_1 = (float)A1_value * 20.0;
-  Longitude_2 = (float)N1_value * 2.0;
+  Longitude_1 = (float)field_lon_val * 20.0;
+  Longitude_2 = (float)square_lon_val * 2.0;
   Longitude_3 = 11.0 / 12.0 + 1.0 / 24.0; // Subsquare center offset
   Longitude = Longitude_1 + Longitude_2 + Longitude_3 - MAIDENHEAD_LON_OFFSET;
 }
 
-// distance (km) on earth's surface from point 1 to point 2
+// distance (km) on earth's surface between two points specified by latitude and longitude
 double distance(double lat1, double lon1, double lat2, double lon2)
 {
   double lat1r = deg2rad(lat1);
@@ -489,7 +459,6 @@ double distance(double lat1, double lon1, double lat2, double lon2)
 
 double bearing(double lat1, double long1, double lat2, double long2)
 {
-
   double dlon = deg2rad(long2 - long1);
   lat1 = deg2rad(lat1);
   lat2 = deg2rad(lat2);
@@ -499,7 +468,7 @@ double bearing(double lat1, double long1, double lat2, double long2)
   a2 = atan2(a1, a2);
   if (a2 < 0.0) // Ensure positive angle
   {
-    a2 += (2 * M_PI);
+    a2 += (2 * PI);
   }
   return rad2deg(a2);
 }
@@ -507,7 +476,7 @@ double bearing(double lat1, double long1, double lat2, double long2)
 // convert degrees to radians
 double deg2rad(double deg)
 {
-  return deg * (M_PI / 180.0);
+  return deg * (PI / 180.0);
 }
 
 double rad2deg(double rad)

@@ -31,13 +31,7 @@ void set_reply(ReplyID replyId);
 
 void set_cq(void);
 
-void Open_Station_File(void);
-void Write_Station_File(void);
-void Read_Station_File(void);
-void Station_Data_Initialize(void);
 
-void set_message(uint16_t index);
-void clear_FT8_message(void);
 
 void compose_messages(void);
 void que_message(int index);

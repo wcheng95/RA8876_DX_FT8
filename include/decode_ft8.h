@@ -26,10 +26,7 @@ typedef struct
     int sync_score;
     int snr;
     int received_snr;
-    //int distance;
-    //int bearing;
-    //int map_distance;
-    //int map_bearing;
+
     char target_locator[7];
     int slot;
     int RR73;

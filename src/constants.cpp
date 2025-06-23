@@ -7,19 +7,6 @@
 
 #include "constants.h"
 
-// Define constants directly
-const int ND = 58; // Data symbols
-const int NS = 21; // Sync symbols (3 @ Costas 7x7)
-const int NN = 79; // Total channel symbols (79)
-const int N = 174; // Number of bits in the encoded message
-const int K = 91;  // Number of payload bits
-const int M = N - K; // Number of checksum bits
-const int K_BYTES = (K + 7) / 8; // Number of whole bytes needed to store K bits
-
-// Define CRC parameters
-const uint16_t CRC_POLYNOMIAL = 0x2757; // CRC-14 polynomial without the leading (MSB) 1
-const int CRC_WIDTH = 14;
-
 uint8_t tones[NN]; // Array to store generated tones (encoded as 0..7)
 
 // Costas 7x7 tone pattern

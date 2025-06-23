@@ -11,7 +11,7 @@ void show_degrees(uint16_t x, uint16_t y, int32_t variable);
 void show_decimal(uint16_t x, uint16_t y, float variable);
 void show_wide(uint16_t x, uint16_t y, int variable);
 
-bool open_stationData_file(void);
+bool load_station_data(void);
 
 void update_message_log_display(int mode);
 void clear_log_messages(void);
