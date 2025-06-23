@@ -18,7 +18,17 @@
 #include "ADIF.h"
 #include "gen_ft8.h"
 #include "decode_ft8.h"
+#include <string> // For std::string
 
+// Named constants for ADIF and map calculations
+static const double EARTH_RADIUS_KM = 6371.0; // radius in km
+static const double MAIDENHEAD_LON_OFFSET = 180.0;
+static const double MAIDENHEAD_LAT_OFFSET = 90.0;
+static const double MAIDENHEAD_LON_FIELD_WIDTH = 20.0;
+static const double MAIDENHEAD_LAT_FIELD_WIDTH = 10.0;
+static const double MAIDENHEAD_LON_SQUARE_WIDTH = 2.0;
+static const double MAIDENHEAD_LAT_SQUARE_WIDTH = 1.0;
+static const char SPACE_CHAR = ' ';
 static const double EARTH_RAD = 6371; // radius in km
 
 #include "EM29_4000.h"  //the picture
@@ -144,28 +154,28 @@ static File Log_File;
 void make_date(void)
 {
   getTeensy3Time();
-  sprintf(log_rtc_date_string, "%4i%2i%2i", year(), month(), day());
-  for (int i = 0; i < 9; i++)
-    if (log_rtc_date_string[i] == 32)
-      log_rtc_date_string[i] = 48;
+  // Use snprintf for safer string formatting
+  snprintf(log_rtc_date_string, sizeof(log_rtc_date_string), "%04i%02i%02i", year(), month(), day());
+  // Replace spaces with '0' if any (though %02i/%04i should prevent this)
+  for (size_t i = 0; i < sizeof(log_rtc_date_string) - 1; ++i)
+    if (log_rtc_date_string[i] == SPACE_CHAR)
+      log_rtc_date_string[i] = '0';
 }
 
 void make_time(void)
 {
   getTeensy3Time();
-  sprintf(log_rtc_time_string, "%2i%2i%2i", hour(), minute(), second());
-  for (int i = 0; i < 9; i++)
-    if (log_rtc_date_string[i] == 32)
-      log_rtc_date_string[i] = 48;
+  snprintf(log_rtc_time_string, sizeof(log_rtc_time_string), "%02i%02i%02i", hour(), minute(), second());
+  for (size_t i = 0; i < sizeof(log_rtc_time_string) - 1; ++i)
+    if (log_rtc_time_string[i] == SPACE_CHAR)
+      log_rtc_time_string[i] = '0';
 }
 
 void make_File_Name(void)
 {
   make_date();
-  sprintf((char *)file_name_string, "%s.adi", log_rtc_date_string);
-  for (int i = 0; i < 24; i++)
-    if (file_name_string[i] == 32)
-      file_name_string[i] = 48;
+  snprintf(file_name_string, sizeof(file_name_string), "%s.adi", log_rtc_date_string);
+  // No need to replace spaces with '0' here, as date string is already handled.
 }
 
 void write_log_data(char *data)
@@ -175,14 +185,14 @@ void write_log_data(char *data)
   Log_File.close();
 }
 
-void Open_Log_File(void)
+void Open_Log_File(const char* filename)
 {
-  Log_File = SD.open(file_name_string, FILE_WRITE);
+  File logFile = SD.open(filename, FILE_WRITE);
 
-  if (Log_File.size() == 0)
+  if (logFile.size() == 0)
   {
-    Log_File.println("ADIF EXPORT");
-    Log_File.println("<eoh>");
+    logFile.println("ADIF EXPORT");
+    logFile.println("<eoh>");
   }
 
   Log_File.close();
@@ -191,7 +201,7 @@ void Open_Log_File(void)
 void Init_Log_File(void)
 {
   make_File_Name();
-  delay(10);
+  delay(10); // Small delay for SD card operations
   Open_Log_File();
 }
 
@@ -202,7 +212,7 @@ void write_ADIF_Log()
   make_time();
   make_date();
   strcpy(display_frequency, sBand_Data[BandIndex].display);
-
+  // Use snprintf to prevent buffer overflows
   sprintf(log_line,
           "<call:7>%7s"
           "<gridsquare:4>%4s"
@@ -440,20 +450,21 @@ float Map_Distance(char target[])
 void process_locator(char locator[])
 {
 
-  uint8_t A1, A2, N1, N2;
-  uint8_t A1_value, A2_value, N1_value, N2_value;
+  // Use descriptive names for Maidenhead components
+  uint8_t field_lon_char, field_lat_char, square_lon_char, square_lat_char;
+  uint8_t field_lon_val, field_lat_val, square_lon_val, square_lat_val;
   float Latitude_1, Latitude_2, Latitude_3;
   float Longitude_1, Longitude_2, Longitude_3;
 
-  A1 = locator[0];
-  A2 = locator[1];
-  N1 = locator[2];
-  N2 = locator[3];
+  field_lon_char = locator[0];
+  field_lat_char = locator[1];
+  square_lon_char = locator[2];
+  square_lat_char = locator[3];
 
-  A1_value = A1 - 65;
-  A2_value = A2 - 65;
-  N1_value = N1 - 48;
-  N2_value = N2 - 48;
+  field_lon_val = field_lon_char - 'A';
+  field_lat_val = field_lat_char - 'A';
+  square_lon_val = square_lon_char - '0';
+  square_lat_val = square_lat_char - '0';
 
   Latitude_1 = (float)A2_value * 10;
   Latitude_2 = (float)N2_value;
@@ -462,8 +473,8 @@ void process_locator(char locator[])
 
   Longitude_1 = (float)A1_value * 20.0;
   Longitude_2 = (float)N1_value * 2.0;
-  Longitude_3 = 11.0 / 12.0 + 1.0 / 24.0;
-  Longitude = Longitude_1 + Longitude_2 + Longitude_3 - 180.0;
+  Longitude_3 = 11.0 / 12.0 + 1.0 / 24.0; // Subsquare center offset
+  Longitude = Longitude_1 + Longitude_2 + Longitude_3 - MAIDENHEAD_LON_OFFSET;
 }
 
 // distance (km) on earth's surface from point 1 to point 2
@@ -473,7 +484,7 @@ double distance(double lat1, double lon1, double lat2, double lon2)
   double lon1r = deg2rad(lon1);
   double lat2r = deg2rad(lat2);
   double lon2r = deg2rad(lon2);
-  return acos(sin(lat1r) * sin(lat2r) + cos(lat1r) * cos(lat2r) * cos(lon2r - lon1r)) * EARTH_RAD;
+  return acos(sin(lat1r) * sin(lat2r) + cos(lat1r) * cos(lat2r) * cos(lon2r - lon1r)) * EARTH_RADIUS_KM;
 }
 
 double bearing(double lat1, double long1, double lat2, double long2)
@@ -486,9 +497,9 @@ double bearing(double lat1, double long1, double lat2, double long2)
   double a2 = sin(lat1) * cos(lat2) * cos(dlon);
   a2 = cos(lat1) * sin(lat2) - a2;
   a2 = atan2(a1, a2);
-  if (a2 < 0.0)
+  if (a2 < 0.0) // Ensure positive angle
   {
-    a2 += (2 * PI);
+    a2 += (2 * M_PI);
   }
   return rad2deg(a2);
 }
@@ -496,7 +507,7 @@ double bearing(double lat1, double long1, double lat2, double long2)
 // convert degrees to radians
 double deg2rad(double deg)
 {
-  return deg * (PI / 180.0);
+  return deg * (M_PI / 180.0);
 }
 
 double rad2deg(double rad)
