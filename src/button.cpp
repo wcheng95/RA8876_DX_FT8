@@ -1,18 +1,22 @@
-#include <si5351.h>
 
+#include <si5351.h>
 #include <RA8876_t3.h>
+#include <Audio.h>
+#include <EEPROM.h>
+#include <Wire.h>
+
+#include <TimeLib.h>
+
 #include "button.h"
 #include "display.h"
 #include "gen_ft8.h"
 #include "traffic_manager.h"
 #include "decode_ft8.h"
 #include "Process_DSP.h"
-#include <EEPROM.h>
-#include <Wire.h>
-#include <TimeLib.h>
 #include "options.h"
 #include "ADIF.h"
-#include <Audio.h>
+#include "main.h"
+#include "Maps.h"
 
 #define Board_PIN 2
 #define Relay_PIN 3
@@ -27,15 +31,6 @@
 #define FreeText2 22
 #define CQFree 4
 
-extern int Transmit_Armned;
-
-extern RA8876_t3 tft;
-extern AudioControlSGTL5000 sgtl5000_1;
-extern Si5351 si5351;
-extern AudioAmplifier amp1;
-extern AudioAmplifier in_left_amp;
-extern AudioAmplifier in_right_amp;
-extern uint16_t currentFrequency;
 #define USB 2
 
 uint16_t draw_x, draw_y, touch_x, touch_y;
@@ -45,20 +40,9 @@ int test;
 #define SCREEN_HEIGHT 600
 #define ft8_shift 6.25
 
-extern int master_decoded;
-extern void sync_FT8(void);
-extern uint16_t cursor_freq;
-extern int Tune_On;
-extern int Auto_QSO_State;
-
-extern uint16_t cursor_line;
 uint16_t display_cursor_line;
-extern int offset_freq;
-extern int xmit_flag;
-
-int start_up_offset_freq;
-extern int logging_on;
 int button_delay = 5;
+int start_up_offset_freq;
 
 uint8_t RX_volume;
 int RF_Gain;
@@ -69,12 +53,10 @@ int FT_8_TouchIndex;
 int FT_8_MessageIndex;
 
 int CQ_Flag;
-int QSO_Flag;
 int Beacon_State;
 int Target_Flag;
 int Beacon_On;
 int Auto_Sync;
-extern int QSO_xmit;
 
 uint16_t start_freq;
 int Arm_Tune;
@@ -88,12 +70,7 @@ int QSO_Fix;
 int CQ_Mode_Index;
 int Free_Index;
 
-int freq_scale = 10;
 int Map_Index;
-int Map_Max = 6;
-
-extern char Free_Text1[];
-extern char Free_Text2[];
 
 #define numButtons 23
 #define button_height 100
@@ -439,7 +416,6 @@ ButtonStruct sButtonData[] = {
 
 void drawButton(uint16_t i)
 {
-
   tft.setFontSize(2, true);
   if (sButtonData[i].Active > 0)
   {
@@ -480,18 +456,13 @@ void display_all_buttons(void)
 void checkButton(void)
 {
   uint16_t i;
-
   for (i = 0; i < numButtons; i++)
   {
-
     if (testButton(i) == 1)
     {
-
       switch (sButtonData[i].Active)
       {
-
       case 0:
-
         break;
 
       case 1:
@@ -506,7 +477,6 @@ void checkButton(void)
 
       case 3:
         executeCalibrationButton(i);
-
         break;
       }
     }
@@ -515,12 +485,9 @@ void checkButton(void)
 
 void executeButton(uint16_t index)
 {
-
   switch (index)
   {
-
   case 0:
-
     sButtonData[0].state = 1;
     drawButton(0);
     delay(40);
@@ -540,7 +507,6 @@ void executeButton(uint16_t index)
     break;
 
   case 1:
-
     if (!sButtonData[1].state)
     {
       Beacon_On = 0;
@@ -562,7 +528,6 @@ void executeButton(uint16_t index)
     break;
 
   case 2:
-
     if (!sButtonData[2].state)
     {
       tune_Off_sequence();
@@ -579,11 +544,9 @@ void executeButton(uint16_t index)
       setup_Cal_Display();
       Arm_Tune = 0;
     }
-
     break;
 
   case 3:
-
     // no code required, all dependent stuff works off of button state
     break;
 
@@ -595,7 +558,6 @@ void executeButton(uint16_t index)
     break;
 
   case 5:
-
     delay(10);
     if (sButtonData[5].state == 1)
       QSO_Fix = 1;
@@ -605,7 +567,6 @@ void executeButton(uint16_t index)
     break;
 
   case 6:
-
     if (!sButtonData[6].state)
       Auto_Sync = 0;
     else
@@ -613,29 +574,23 @@ void executeButton(uint16_t index)
       Auto_Sync = 1;
       Be_Patient();
     }
-
     break;
 
   case 7: // Lower Gain
-
     if (RF_Gain >= 2)
       RF_Gain--;
     display_value(620, 559, RF_Gain);
     set_RF_Gain(RF_Gain);
-
     break;
 
   case 8: // Raise Gain
-
     if (RF_Gain < 32)
       RF_Gain++;
     display_value(620, 559, RF_Gain);
     set_RF_Gain(RF_Gain);
-
     break;
 
   case 9: // Lower Freq
-
     if (cursor_line > 0)
     {
       cursor_line--;
@@ -643,11 +598,9 @@ void executeButton(uint16_t index)
       display_cursor_line = 2 * cursor_line;
       display_value(870, 559, cursor_freq);
     }
-
     break;
 
   case 10: // Raise Freq
-
     if (cursor_line <= (ft8_buffer - ft8_min_bin - 2))
     {
       cursor_line++;
@@ -658,10 +611,8 @@ void executeButton(uint16_t index)
     break;
 
   case 14: // Transmit for Calibration   17
-
     if (!sButtonData[14].state)
     {
-
       tune_Off_sequence();
       Arm_Tune = 0;
       xmit_flag = 0;
@@ -675,39 +626,31 @@ void executeButton(uint16_t index)
       tune_On_sequence();
       Arm_Tune = 1;
     }
-
     break;
   }
 }
 
 void executeCalibrationButton(uint16_t index)
 {
-
   switch (index)
   {
-
   case 11: // Lower Band
-
     if (BandIndex > Band_Minimum)
     {
       BandIndex--;
       show_wide(90, 140, sBand_Data[BandIndex].Frequency); // 790 - 700 = 90
     }
-
     break;
 
   case 12: // Raise Band
-
     if (BandIndex < _10M)
     {
       BandIndex++;
       show_wide(90, 140, sBand_Data[BandIndex].Frequency); // 790 - 700 = 90
     }
-
     break;
 
   case 13: // Save Band Changes
-
     Options_SetValue(0, BandIndex);
     Options_StoreValue(0);
     start_freq = sBand_Data[BandIndex].Frequency;
@@ -723,11 +666,9 @@ void executeCalibrationButton(uint16_t index)
     delay(10);
     sButtonData[13].state = 0;
     drawButton(13);
-
     break;
 
   case 15: // Lower Map_Index
-
     if (Map_Index > 0)
     {
       Map_Index--;
@@ -742,12 +683,10 @@ void executeCalibrationButton(uint16_t index)
     delay(10);
     sButtonData[15].state = 0;
     drawButton(15);
-
     break;
 
   case 16: // Raise Map_Index
-
-    if (Map_Index < Map_Max)
+    if (Map_Index < numMaps - 1)
     {
       Map_Index++;
       draw_map(Map_Index);
@@ -755,13 +694,12 @@ void executeCalibrationButton(uint16_t index)
       Options_StoreValue(1);
       Map_Index = Options_GetValue(1);
     }
-
+    
     sButtonData[16].state = 1;
     drawButton(16);
     delay(10);
     sButtonData[16].state = 0;
     drawButton(16);
-
     break;
 
   case StandardCQ:
@@ -772,9 +710,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[StandardCQ].state = 1;
       drawButton(StandardCQ);
     }
-    display_value(0, 300, StandardCQ);
-    display_value(100, 300, Free_Index);
-
     break;
 
   case CQSOTA:
@@ -785,8 +720,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[CQSOTA].state = 1;
       drawButton(CQSOTA);
     }
-    display_value(0, 300, CQSOTA);
-    display_value(100, 300, Free_Index);
     break;
 
   case CQPOTA:
@@ -797,8 +730,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[CQPOTA].state = 1;
       drawButton(CQPOTA);
     }
-    display_value(0, 300, CQPOTA);
-    display_value(100, 300, Free_Index);
     break;
 
   case QRPP:
@@ -809,8 +740,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[QRPP].state = 1;
       drawButton(QRPP);
     }
-    display_value(0, 300, QRPP);
-    display_value(100, 300, Free_Index);
     break;
 
   case 21:
@@ -829,8 +758,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[FreeText1].state = 0;
       drawButton(FreeText1);
     }
-
-    display_value(100, 300, Free_Index);
     break;
 
   case FreeText2:
@@ -849,8 +776,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[FreeText2].state = 0;
       drawButton(FreeText2);
     }
-
-    display_value(100, 300, Free_Index);
     break;
   }
 }
@@ -864,7 +789,6 @@ void set_xmit_button(bool state)
 
 void init_RxSw_TxSw(void)
 {
-
   pinMode(TxSw_PIN, OUTPUT);
   digitalWrite(TxSw_PIN, HIGH);
   delay(10);
@@ -920,7 +844,6 @@ void SelectFilterBlock(void)
 
 void transmit_sequence(void)
 {
-
   digitalWrite(RxSw_PIN, HIGH);
   delay(10);
   digitalWrite(TxSw_PIN, LOW);
@@ -929,7 +852,6 @@ void transmit_sequence(void)
 
 void receive_sequence(void)
 {
-
   digitalWrite(TxSw_PIN, HIGH);
   delay(10);
   digitalWrite(RxSw_PIN, LOW);
@@ -938,7 +860,6 @@ void receive_sequence(void)
 
 void set_RF_Gain(int rfgain)
 {
-
   float gain_setpoint;
   gain_setpoint = (float)rfgain / 32.0;
   amp1.gain(gain_setpoint);
@@ -946,15 +867,12 @@ void set_RF_Gain(int rfgain)
 
 void set_Attenuator_Gain(float att_gain)
 {
-
   in_left_amp.gain(att_gain);
   in_right_amp.gain(att_gain);
 }
 
 void terminate_transmit_armed(void)
 {
-
-  Transmit_Armned = 0;
   ft8_receive_sequence();
   delay(2);
   receive_sequence();
@@ -964,21 +882,16 @@ void terminate_transmit_armed(void)
 
 int testButton(uint8_t index)
 {
-
   if ((draw_x > sButtonData[index].x) && (draw_x < sButtonData[index].x + sButtonData[index].w) && (draw_y > sButtonData[index].y) && (draw_y <= sButtonData[index].y + sButtonData[index].h))
   {
-
-    tft.drawCircle(draw_x, draw_y, 5, YELLOW);
     return 1;
   }
   else
-
     return 0;
 }
 
 int FT8_Touch(void)
 {
-
   int y_test;
 
   if (draw_x < 320 && (draw_y > 100 && draw_y < 500))
@@ -988,15 +901,12 @@ int FT8_Touch(void)
     FT_8_TouchIndex = y_test / 40;
     return 1;
   }
-
   else
-
     return 0;
 }
 
 int Xmit_message_Touch(void)
 {
-
   int y_test;
   if ((draw_x > 400 && draw_x < 640) && (draw_y > 380 && draw_y < 550))
   {
@@ -1006,7 +916,6 @@ int Xmit_message_Touch(void)
 
     return 1;
   }
-
   else
     return 0;
 }
@@ -1015,7 +924,6 @@ void check_WF_Touch(void)
 {
   if (draw_x < 600 && draw_y < 90)
   {
-
     display_cursor_line = draw_x;
     cursor_line = display_cursor_line / 2;
     cursor_freq = (uint16_t)((float)(cursor_line + ft8_min_bin) * ft8_shift);
@@ -1025,7 +933,6 @@ void check_WF_Touch(void)
 
 void set_startup_freq(void)
 {
-
   display_cursor_line = 224;
   cursor_line = display_cursor_line / 2;
   cursor_freq = (uint16_t)((float)(cursor_line + ft8_min_bin) * ft8_shift);
@@ -1037,10 +944,8 @@ int touch_count;
 
 void process_touch(void)
 {
-
   if (touch_count <= MAXTOUCHLIMIT)
   {
-
     if (tft.touched())
     { // if touched(true) detach isr
       // at this point we need to fill the FT5206 registers...
@@ -1075,9 +980,7 @@ void process_touch(void)
 
 void setup_Cal_Display(void)
 {
-
   clear_reply_message_box();
-  // tft.fillRect(400, 100, 624, 439,BLACK );
   tft.fillRect(0, 100, 600, 439, BLACK);
   erase_CQ();
 
@@ -1104,7 +1007,6 @@ void setup_Cal_Display(void)
 
 void display_Free_Text(void)
 {
-
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
 
@@ -1125,8 +1027,6 @@ void reset_buttons(int btn1, int btn2, int btn3, const char *button_text)
   drawButton(btn3);
   sButtonData[4].text0 = (char *)button_text;
   drawButton(4);
-
-  display_value(100, 300, CQ_Mode_Index);
 }
 
 void update_CQFree_button()

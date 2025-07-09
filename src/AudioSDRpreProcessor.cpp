@@ -39,8 +39,11 @@
 
 #include "AudioSDRpreProcessor.h"
 #include "utility/dspinst.h"
+
 #include "arm_math.h"
+
 #include "arm_const_structs.h"
+
 #include "Streaming.h"
 // -----
 void AudioSDRpreProcessor::update(void)

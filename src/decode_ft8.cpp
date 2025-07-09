@@ -10,23 +10,26 @@
 #include <stdio.h>
 #include <math.h>
 #include <ctype.h>
+
+#include <RA8876_t3.h>
+#include <Audio.h>
+#include <si5351.h>
+
+#include <TimeLib.h>
+
 #include "gen_ft8.h"
 #include "unpack.h"
 #include "ldpc.h"
 #include "decode.h"
 #include "constants.h"
 #include "encode.h"
-#include <TimeLib.h>
 #include "Process_DSP.h"
 #include "display.h"
 #include "decode_ft8.h"
-#include <RA8876_t3.h>
 #include "ADIF.h"
 #include "button.h"
-
-extern RA8876_t3 tft;
-
-extern int left_hand_message;
+#include "main.h"
+#include "traffic_manager.h"
 
 char blank[] = "                          ";
 int blank_length = 26;
@@ -36,10 +39,6 @@ const int kMax_candidates = 20;
 const int kMax_decoded_messages = 20;
 size_t kMax_message_length = 20;
 const int kMin_score = 40; // Minimum sync score threshold for candidates
-
-int strindex(const char *s, const char *t);
-
-extern uint8_t export_fft_power[];
 
 display_message_details display[10];
 
@@ -54,34 +53,8 @@ int message_limit = 10;
 
 int Auto_QSO_State; // chh
 
-extern int Beacon_On;
-extern int Station_RSL;
-extern char Target_Locator[]; // four character locator  + /0
-extern char Station_Call[];
-
-extern int QSO_Fix;
-extern int slot_state;
-extern int target_slot;
-extern int target_freq;
-extern int RSL_sent;
-extern int RR73_sent;
-extern uint16_t cursor_freq;
-
-extern char Target_Call[];
-extern int Target_RSL; // four character RSL  + /0
-
-extern uint16_t cursor_line;
-extern uint16_t display_cursor_line;
-
-extern time_t getTeensy3Time();
-
-extern int FT8_Touch_Flag;
-
-extern char current_message[];
-
 int ft8_decode(void)
 {
-
   // Find top candidates by Costas sync score and localize them in time and frequency
   Candidate candidate_list[kMax_candidates];
 
@@ -337,10 +310,6 @@ void clear_decoded_messages(void)
   }
 }
 
-char field1[14];
-char field2[14];
-char field3[7];
-
 int Check_Calling_Stations(int num_decoded)
 {
   int Beacon_Reply_Status = 0;
@@ -383,8 +352,7 @@ int Check_Calling_Stations(int num_decoded)
         if (new_decoded[i].received_snr != 99)
           Station_RSL = new_decoded[i].received_snr;
 
-        if (Beacon_On == 1) // migraion
-
+        if (Beacon_On == 1) // migration
         {
           if (new_decoded[i].sequence == Seq_Locator)
             set_reply(Reply_RSL);
@@ -406,7 +374,6 @@ int Check_Calling_Stations(int num_decoded)
 
       if (old_call >= 1 && old_call < 5)
       {
-
         sprintf(received_message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
         strcpy(current_message, received_message);
         update_message_log_display(0);
@@ -427,8 +394,7 @@ int Check_Calling_Stations(int num_decoded)
         {
           if (Beacon_On == 1)
           {
-            // if (new_decoded[i].RR73 == 1)  //chh_ft8_traffic
-            if (new_decoded[i].RR73 > 0)
+			if (new_decoded[i].RR73 > 0)
             {
               if (Answer_CQ[old_call_address].sequence == Seq_Locator)
                 // if this is a  locator response send Beacon 73
@@ -463,6 +429,16 @@ int Check_Calling_Stations(int num_decoded)
   return Beacon_Reply_Status;
 }
 
+void set_QSO_Xmit_Freq(int freq)
+{
+  cursor_freq = freq;
+  display_value(870, 559, cursor_freq);
+
+  float cursor_value = (float)freq / FFT_Resolution;
+  cursor_line = (uint16_t)(cursor_value - ft8_min_bin);
+  display_cursor_line = 2 * cursor_line;
+}
+
 void process_selected_Station(int stations_decoded, int TouchIndex)
 {
   if (stations_decoded > 0 && TouchIndex <= stations_decoded)
@@ -485,14 +461,3 @@ void process_selected_Station(int stations_decoded, int TouchIndex)
   FT8_Touch_Flag = 0;
 }
 
-void set_QSO_Xmit_Freq(int freq)
-{
-  float cursor_value;
-
-  cursor_freq = freq;
-  display_value(870, 559, cursor_freq);
-
-  cursor_value = (float)freq / FFT_Resolution;
-  cursor_line = (uint16_t)(cursor_value - ft8_min_bin);
-  display_cursor_line = 2 * cursor_line;
-}

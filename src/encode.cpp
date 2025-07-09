@@ -5,10 +5,10 @@
  *      Author: user
  */
 
+#include <stdio.h>
+
 #include "encode.h"
 #include "constants.h"
-
-#include <stdio.h>
 
 // Returns 1 if an odd number of bits are set in x, zero otherwise
 static uint8_t parity8(uint8_t x)

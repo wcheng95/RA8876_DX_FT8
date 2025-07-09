@@ -7,7 +7,35 @@
 
 #include "constants.h"
 
-uint8_t tones[NN]; // Array to store generated tones (encoded as 0..7)
+int ND;
+int NS;
+int NN;
+int N;
+int K;
+int M;
+int K_BYTES;
+uint16_t CRC_POLYNOMIAL; // CRC-14 polynomial without the leading (MSB) 1
+int CRC_WIDTH;
+uint8_t tones[79];
+
+void initalize_constants(void)
+{
+    ND = 58; // Data symbols
+    NS = 21; // Sync symbols (3 @ Costas 7x7)
+    // int NN = NS + ND;   // Total channel symbols (79)
+    NN = 79; // Total channel symbols (79)
+    // Define the LDPC sizes
+    N = 174; // Number of bits in the encoded message
+    K = 91;  // Number of payload bits
+    // int M = N - K;    // Number of checksum bits
+    M = 83;
+    // int K_BYTES = (K + 7) / 8;    // Number of whole bytes needed to store K bits
+    K_BYTES = 12;
+
+    // Define CRC parameters
+    CRC_POLYNOMIAL = 0x2757; // CRC-14 polynomial without the leading (MSB) 1
+    CRC_WIDTH = 14;
+}
 
 // Costas 7x7 tone pattern
 const uint8_t kCostas_map[7] = {3, 1, 4, 0, 6, 5, 2};

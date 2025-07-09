@@ -1,3 +1,6 @@
+
+#pragma once
+
 // Number of coefficients
 #define NUM_COEFFS 128
 

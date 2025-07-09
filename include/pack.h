@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <stdint.h>
 
 // Pack FT8 text message into 72 bits

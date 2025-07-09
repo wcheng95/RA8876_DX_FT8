@@ -1,7 +1,5 @@
 
 
-#include <string>
-
 #include <SPI.h>
 #include <TimeLib.h>
 #include <TinyGPS.h>
@@ -11,19 +9,18 @@
 #include <SD.h>
 #include <SerialFlash.h>
 #include <si5351.h>
+#include <RA8876_t3.h>
 
-#include "RA8876_t3.h"
+#include "arm_math.h"
+
+#include "Arduino.h"
 #include "Process_DSP.h"
 #include "decode_ft8.h"
 #include "WF_Table.h"
-#include "arm_math.h"
 #include "display.h"
 #include "button.h"
-//#include "locator.h"
 #include "traffic_manager.h"
-#include "Arduino.h"
 #include "AudioStream.h"
-#include "arm_math.h"
 #include "filters.h"
 #include "constants.h"
 #include "maidenhead.h"
@@ -31,6 +28,7 @@
 #include "options.h"
 #include "ADIF.h"
 #include "AudioSDRpreProcessor.h"
+#include "main.h"
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
@@ -62,11 +60,11 @@ AudioRecordQueue queue1;       // xy=1027,149
 AudioAmplifier left_amp;
 AudioAmplifier right_amp;
 
-AudioAmplifier           in_left_amp;
-AudioAmplifier           in_right_amp;
+AudioAmplifier in_left_amp;
+AudioAmplifier in_right_amp;
 
-AudioConnection c11(i2s1, 0,  in_left_amp, 0);
-AudioConnection c12(i2s1, 1,  in_right_amp, 0);
+AudioConnection c11(i2s1, 0, in_left_amp, 0);
+AudioConnection c12(i2s1, 1, in_right_amp, 0);
 
 AudioConnection c13(in_left_amp, 0, preProcessor, 0);
 AudioConnection c14(in_right_amp, 0, preProcessor, 1);
@@ -91,7 +89,7 @@ AudioConnection c5(mixer2, 0, right_amp, 0);
 AudioConnection c6(left_amp, 0, i2s2, 0);
 AudioConnection c7(right_amp, 0, i2s2, 1);
 
-AudioControlSGTL5000 sgtl5000_1; // xy=404,516
+AudioControlSGTL5000 sgtl5000; // xy=404,516
 
 q15_t __attribute__((aligned(4))) dsp_buffer[3 * input_gulp_size];
 q15_t __attribute__((aligned(4))) dsp_output[FFT_SIZE * 2];
@@ -106,16 +104,18 @@ uint32_t current_time, start_time, ft8_time;
 uint32_t days_fraction, hours_fraction, minute_fraction;
 
 uint8_t ft8_hours, ft8_minutes, ft8_seconds;
-int ft8_flag, FT_8_counter, ft8_marker, decode_flag;
+int ft8_flag;
+int FT_8_counter;
+int ft8_marker;
+int decode_flag;
 int WF_counter;
-int num_decoded_msg;
-int xmit_flag, ft8_xmit_counter, Transmit_Armned;
+int xmit_flag;
+int ft8_xmit_counter;
 int DSP_Flag;
 int master_decoded;
 
 uint16_t cursor_freq;
 uint16_t cursor_line;
-int offset_freq;
 int Tune_On;
 
 float xmit_level = 0.8;
@@ -136,32 +136,12 @@ byte SD_Month, SD_Day, SD_Hour, SD_Minute, SD_Second, SD_Flag;
 
 long et1 = 0, et2 = 0;
 
-extern int CQ_Flag;
-extern int Beacon_On;
-extern int FT8_Touch_Flag;
-extern int FT_8_TouchIndex;
-extern int FT8_Message_Touch;
-extern int FT_8_MessageIndex;
-extern uint8_t RX_volume;
-extern int RF_Gain;
-
-extern uint16_t start_freq;
-
 int QSO_xmit;
 int Xmit_DSP_counter;
 int slot_state = 0;
 int target_slot;
 int target_freq;
 
-extern int16_t map_width;
-extern int16_t map_heigth;
-extern int16_t map_center_x;
-extern int16_t map_center_y;
-extern int Map_Index;
-
-extern int offset_index;
-
-time_t getTeensy3Time();
 static void process_data();
 static void parse_NEMA(void);
 static void update_synchronization();
@@ -171,7 +151,7 @@ void setup(void)
 {
   Serial.begin(9600);
 
-  if (CrashReport) 
+  if (CrashReport)
   {
     Serial.print(CrashReport);
   }
@@ -203,6 +183,7 @@ void setup(void)
   start_Si5351();
 
   init_DSP();
+  initalize_constants();
 
   set_startup_freq();
 
@@ -212,11 +193,11 @@ void setup(void)
   RX_volume = 10;
   RF_Gain = 20;
 
-  sgtl5000_1.enable();
-  sgtl5000_1.inputSelect(AUDIO_INPUT_LINEIN);
-  sgtl5000_1.lineInLevel(RX_volume);
-  sgtl5000_1.lineOutLevel(31);
-  sgtl5000_1.volume(0.4);
+  sgtl5000.enable();
+  sgtl5000.inputSelect(AUDIO_INPUT_LINEIN);
+  sgtl5000.lineInLevel(RX_volume);
+  sgtl5000.lineOutLevel(31);
+  sgtl5000.volume(0.4);
 
   sine1.amplitude(1.0);
   sine1.frequency(10000);
@@ -241,7 +222,7 @@ void setup(void)
 
   start_time = millis();
 
-  load_station_data();
+  open_stationData_file();
 
   set_Station_Coordinates(Locator);
 
@@ -249,22 +230,12 @@ void setup(void)
   display_date(650, 30);
   display_station_data(820, 0);
 
-  /*
-  Init_BoardVersionInput();
-  delay(10);
-  Check_Board_Version();
-  delay(10);
-  Options_Initialize();
-  delay(10);
-  */
   display_revision_level();
 
   display_value(620, 559, RF_Gain);
 
   Init_Log_File();
   draw_map(Map_Index);
-
-  // update_synchronization();
 }
 
 void loop()
@@ -307,8 +278,7 @@ void loop()
 
     master_decoded = ft8_decode();
     if (master_decoded > 0)
-     display_messages(master_decoded);
- 
+      display_messages(master_decoded);
 
     if (Beacon_On == 1)
       service_Beacon_mode(master_decoded);
@@ -338,7 +308,6 @@ static void process_data()
 {
   if (queue1.available() >= num_que_blocks)
   {
-
     for (int i = 0; i < num_que_blocks; i++)
     {
       copy_to_fft_buffer(input_gulp + block_size * i, queue1.readBuffer());
@@ -425,7 +394,8 @@ void parse_NEMA(void)
 
       if (strindex(Locator, locator) < 0)
       {
-        memcpy(Locator, locator, sizeof(Locator));
+        for (int i = 0; i < 11; i++)
+          Locator[i] = locator[i];
         set_Station_Coordinates(Locator);
         display_station_data(820, 0);
       }

@@ -1,3 +1,4 @@
+
 #pragma once
 
 // Utility functions for characters and strings
@@ -28,4 +29,3 @@ int dd_to_int(const char *str, int length);
 void int_to_dd(char *str, int value, int width, bool full_sign);
 
 char charn(int c, int table_idx);
-int nchar(char c, int table_idx);

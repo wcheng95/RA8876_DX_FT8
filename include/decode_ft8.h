@@ -10,13 +10,13 @@
 
 int ft8_decode(void);
 
-typedef enum _Sequence
+enum Sequence
 {
     Seq_RSL = 0,
     Seq_Locator
-} Sequence;
+};
 
-typedef struct
+struct Decode
 {
     char field1[14];
     char field2[14];
@@ -26,20 +26,19 @@ typedef struct
     int sync_score;
     int snr;
     int received_snr;
-
     char target_locator[7];
     int slot;
     int RR73;
     Sequence sequence;
-} Decode;
+};
 
-typedef struct
+struct display_message_details
 {
     char message[40];
     int text_color;
-} display_message_details;
+};
 
-typedef struct
+struct Calling_Station
 {
     int number_times_called;
     char call[14];
@@ -47,25 +46,21 @@ typedef struct
     int RSL;
     int received_RSL;
     int RR73;
-    //int distance;
-    //int map_distance;
-    //int map_bearing;
     Sequence sequence;
-} Calling_Station;
+};
 
 int Check_Calling_Stations(int num_decoded);
-void display_details(int decoded_messages);
-void display_messages(int decoded_messages);
-void clear_display_details(void);
-void display_selected_call(int index);
 
 void process_selected_Station(int stations_decoded, int TouchIndex);
-void set_QSO_Xmit_Freq(int freq);
 
 void clear_decoded_messages(void);
 void clear_log_stored_data(void);
 
-int strindex(const char *s, const char *t);
 int validate_locator(const char *QSO_locator);
+int strindex(const char *s, const char *t);
+
+extern int Auto_QSO_State;
+extern struct Decode new_decoded[];
+extern size_t kMax_message_length;
 
 #endif /* DECODE_FT8_H_ */
