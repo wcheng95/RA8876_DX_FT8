@@ -10,23 +10,26 @@
 #include <stdio.h>
 #include <math.h>
 #include <ctype.h>
+
+#include <RA8876_t3.h>
+#include <Audio.h>
+#include <si5351.h>
+
+#include <TimeLib.h>
+
 #include "gen_ft8.h"
 #include "unpack.h"
 #include "ldpc.h"
 #include "decode.h"
 #include "constants.h"
 #include "encode.h"
-#include <TimeLib.h>
 #include "Process_DSP.h"
 #include "display.h"
 #include "decode_ft8.h"
-#include <RA8876_t3.h>
 #include "ADIF.h"
 #include "button.h"
-
-extern RA8876_t3 tft;
-
-extern int left_hand_message;
+#include "main.h"
+#include "traffic_manager.h"
 
 char blank[] = "                          ";
 int blank_length = 26;
@@ -36,19 +39,6 @@ const int kMax_candidates = 20;
 const int kMax_decoded_messages = 20;
 size_t kMax_message_length = 20;
 const int kMin_score = 40; // Minimum sync score threshold for candidates
-
-int strindex(const char *s, const char *t);
-
-extern uint8_t export_fft_power[];
-
-extern int ND;
-extern int NS;
-extern int NN;
-// Define the LDPC sizes
-extern int N;
-extern int K;
-extern int M;
-extern int K_BYTES;
 
 display_message_details display[10];
 
@@ -63,34 +53,8 @@ int message_limit = 10;
 
 int Auto_QSO_State; // chh
 
-extern int Beacon_On;
-extern int Station_RSL;
-extern char Target_Locator[]; // four character locator  + /0
-extern char Station_Call[];
-
-extern int QSO_Fix;
-extern int slot_state;
-extern int target_slot;
-extern int target_freq;
-extern int RSL_sent;
-extern int RR73_sent;
-extern uint16_t cursor_freq;
-
-extern char Target_Call[];
-extern int Target_RSL; // four character RSL  + /0
-
-extern uint16_t cursor_line;
-extern uint16_t display_cursor_line;
-
-extern time_t getTeensy3Time();
-
-extern int FT8_Touch_Flag;
-
-extern char current_message[];
-
 int ft8_decode(void)
 {
-
   // Find top candidates by Costas sync score and localize them in time and frequency
   Candidate candidate_list[kMax_candidates];
 
@@ -133,14 +97,14 @@ int ft8_decode(void)
 
     char message[kMax_message_length];
 
-    char field1[14];
-    char field2[14];
-    char field3[7];
-    int rc = unpack77_fields(a91, field1, field2, field3);
+    char call_to[14];
+    char call_from[14];
+    char locator[7];
+    int rc = unpack77_fields(a91, call_to, call_from, locator);
     if (rc < 0)
       continue;
 
-    sprintf(message, "%s %s %s ", field1, field2, field3);
+    sprintf(message, "%s %s %s ", call_to, call_from, locator);
 
     // Check for duplicate messages (TODO: use hashing)
     bool found = false;
@@ -172,9 +136,9 @@ int ft8_decode(void)
 
         new_decoded[num_decoded].sync_score = cand.score;
         new_decoded[num_decoded].freq_hz = (int)freq_hz;
-        strcpy(new_decoded[num_decoded].field1, field1);
-        strcpy(new_decoded[num_decoded].field2, field2);
-        strcpy(new_decoded[num_decoded].field3, field3);
+        strcpy(new_decoded[num_decoded].call_to, call_to);
+        strcpy(new_decoded[num_decoded].call_from, call_from);
+        strcpy(new_decoded[num_decoded].locator, locator);
         strcpy(new_decoded[num_decoded].decode_time, rtc_string);
 
         new_decoded[num_decoded].slot = slot_state;
@@ -186,7 +150,7 @@ int ft8_decode(void)
         char Test_Locator[] = "    ";
         char FT8_Message[] = "    ";
 
-        strcpy(Test_Locator, new_decoded[num_decoded].field3);
+        strcpy(Test_Locator, new_decoded[num_decoded].locator);
 
         if (validate_locator(Test_Locator) == 1)
         {
@@ -194,7 +158,7 @@ int ft8_decode(void)
           new_decoded[num_decoded].sequence = Seq_Locator;
         }
 
-        strcpy(FT8_Message, new_decoded[num_decoded].field3);
+        strcpy(FT8_Message, new_decoded[num_decoded].locator);
 
         if (strindex(FT8_Message, "73") >= 0 || strindex(FT8_Message, "RR73") >= 0 || strindex(FT8_Message, "RRR") >= 0)
         {
@@ -236,21 +200,21 @@ void display_messages(int decoded_messages)
 
     strcpy(display[i].message, blank);
 
-    if (strcmp(CQ, new_decoded[i].field1) == 0)
+    if (strcmp(CQ, new_decoded[i].call_to) == 0)
     {
 
-      if (strcmp(Station_Call, new_decoded[i].field2) != 0)
+      if (strcmp(Station_Call, new_decoded[i].call_from) != 0)
       {
-        sprintf(display[i].message, "%s %s %s %2i", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3, new_decoded[i].snr);
+        sprintf(display[i].message, "%s %s %s %2i", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator, new_decoded[i].snr);
       }
       else
-        sprintf(display[i].message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
+        sprintf(display[i].message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
       display[i].text_color = 1;
     }
 
     else
     {
-      sprintf(display[i].message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
+      sprintf(display[i].message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
       display[i].text_color = 0;
     }
 
@@ -333,9 +297,9 @@ void clear_decoded_messages(void)
 
   for (int i = 0; i < kMax_decoded_messages; i++)
   {
-    strcpy(new_decoded[i].field1, call_blank);
-    strcpy(new_decoded[i].field2, call_blank);
-    strcpy(new_decoded[i].field3, locator_blank);
+    strcpy(new_decoded[i].call_to, call_blank);
+    strcpy(new_decoded[i].call_from, call_blank);
+    strcpy(new_decoded[i].locator, locator_blank);
     strcpy(new_decoded[i].target_locator, locator_blank);
     new_decoded[i].freq_hz = 0;
     new_decoded[i].sync_score = 0;
@@ -345,10 +309,6 @@ void clear_decoded_messages(void)
     new_decoded[i].sequence = Seq_RSL;
   }
 }
-
-char field1[14];
-char field2[14];
-char field3[7];
 
 int Check_Calling_Stations(int num_decoded)
 {
@@ -360,13 +320,13 @@ int Check_Calling_Stations(int num_decoded)
     int old_call;
     int old_call_address = 0;
 
-    if (strindex(new_decoded[i].field1, Station_Call) >= 0)
+    if (strindex(new_decoded[i].call_to, Station_Call) >= 0)
     {
       old_call = 0;
 
       for (int j = 0; j < num_calls; j++)
       {
-        if (strcmp(Answer_CQ[j].call, new_decoded[i].field2) == 0)
+        if (strcmp(Answer_CQ[j].call, new_decoded[i].call_from) == 0)
         {
           old_call = Answer_CQ[j].number_times_called;
           old_call++;
@@ -377,12 +337,12 @@ int Check_Calling_Stations(int num_decoded)
 
       if (old_call == 0)
       {
-        sprintf(received_message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
+        sprintf(received_message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
         strcpy(current_message, received_message);
 
         update_message_log_display(0);
 
-        strcpy(Target_Call, new_decoded[i].field2);
+        strcpy(Target_Call, new_decoded[i].call_from);
 
         if (Beacon_On == 1)
           Target_RSL = new_decoded[i].snr;
@@ -392,8 +352,7 @@ int Check_Calling_Stations(int num_decoded)
         if (new_decoded[i].received_snr != 99)
           Station_RSL = new_decoded[i].received_snr;
 
-        if (Beacon_On == 1) // migraion
-
+        if (Beacon_On == 1) // migration
         {
           if (new_decoded[i].sequence == Seq_Locator)
             set_reply(Reply_RSL);
@@ -403,7 +362,7 @@ int Check_Calling_Stations(int num_decoded)
 
         Beacon_Reply_Status = 1;
 
-        strcpy(Answer_CQ[num_calls].call, new_decoded[i].field2);
+        strcpy(Answer_CQ[num_calls].call, new_decoded[i].call_from);
         strcpy(Answer_CQ[num_calls].locator, new_decoded[i].target_locator);
         Answer_CQ[num_calls].RSL = Target_RSL;
         Answer_CQ[num_calls].received_RSL = Station_RSL;
@@ -415,8 +374,7 @@ int Check_Calling_Stations(int num_decoded)
 
       if (old_call >= 1 && old_call < 5)
       {
-
-        sprintf(received_message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
+        sprintf(received_message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
         strcpy(current_message, received_message);
         update_message_log_display(0);
 
@@ -436,8 +394,7 @@ int Check_Calling_Stations(int num_decoded)
         {
           if (Beacon_On == 1)
           {
-            // if (new_decoded[i].RR73 == 1)  //chh_ft8_traffic
-            if (new_decoded[i].RR73 > 0)
+			if (new_decoded[i].RR73 > 0)
             {
               if (Answer_CQ[old_call_address].sequence == Seq_Locator)
                 // if this is a  locator response send Beacon 73
@@ -472,11 +429,21 @@ int Check_Calling_Stations(int num_decoded)
   return Beacon_Reply_Status;
 }
 
+void set_QSO_Xmit_Freq(int freq)
+{
+  cursor_freq = freq;
+  display_value(870, 559, cursor_freq);
+
+  float cursor_value = (float)freq / FFT_Resolution;
+  cursor_line = (uint16_t)(cursor_value - ft8_min_bin);
+  display_cursor_line = 2 * cursor_line;
+}
+
 void process_selected_Station(int stations_decoded, int TouchIndex)
 {
   if (stations_decoded > 0 && TouchIndex <= stations_decoded)
   {
-    strcpy(Target_Call, new_decoded[TouchIndex].field2);
+    strcpy(Target_Call, new_decoded[TouchIndex].call_from);
     strcpy(Target_Locator, new_decoded[TouchIndex].target_locator);
     Target_RSL = new_decoded[TouchIndex].snr;
     target_slot = new_decoded[TouchIndex].slot;
@@ -494,14 +461,3 @@ void process_selected_Station(int stations_decoded, int TouchIndex)
   FT8_Touch_Flag = 0;
 }
 
-void set_QSO_Xmit_Freq(int freq)
-{
-  float cursor_value;
-
-  cursor_freq = freq;
-  display_value(870, 559, cursor_freq);
-
-  cursor_value = (float)freq / FFT_Resolution;
-  cursor_line = (uint16_t)(cursor_value - ft8_min_bin);
-  display_cursor_line = 2 * cursor_line;
-}

@@ -16,8 +16,9 @@
 // codeword[i] = log ( P(x=0) / P(x=1) )
 //
 #include <stdio.h>
-#include <math.h>
 #include <stdlib.h>
+#include <math.h>
+
 #include "constants.h"
 
 static int ldpc_check(uint8_t codeword[]);

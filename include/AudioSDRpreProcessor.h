@@ -53,7 +53,8 @@
 #define spectralAvgMultiplier 10.0
 #define n_block 128
 
-class AudioSDRpreProcessor : public AudioStream {
+class AudioSDRpreProcessor : public AudioStream
+{
 public:
   AudioSDRpreProcessor() : AudioStream(2, inputQueueArray) {}
   virtual void update(void);

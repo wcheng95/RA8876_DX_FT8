@@ -1,38 +1,25 @@
+#include <Audio.h>
 #include "RA8876_t3.h"
-extern RA8876_t3 tft;
+#include <TimeLib.h>
+#include <si5351.h>
 
 #include "Process_DSP.h"
 #include "WF_Table.h"
 #include "arm_math.h"
 #include "decode_ft8.h"
 #include "display.h"
-#include <TimeLib.h>
 #include "traffic_manager.h"
 #include "button.h"
-
-extern q15_t __attribute__((aligned(4))) dsp_buffer[];
-extern q15_t __attribute__((aligned(4))) dsp_output[];
-static q15_t __attribute__((aligned(4))) window_dsp_buffer[FFT_SIZE];
+#include "main.h"
 
 uint8_t WF_index[900];
 float window[FFT_SIZE];
 
-extern uint16_t cursor_line;
-extern uint16_t display_cursor_line;
-
-extern int ft8_flag, FT_8_counter, ft8_marker, decode_flag, WF_counter;
-extern int num_decoded_msg;
-
 int master_offset, offset_step;
-extern int CQ_Flag;
-extern int QSO_Flag;
-extern int Transmit_Armned;
-extern int Auto_Sync;
-extern void sync_FT8(void);
-extern ButtonStruct sButtonData[];
-extern int xmit_flag;
 
 int offset_index;
+
+static q15_t __attribute__((aligned(4))) window_dsp_buffer[FFT_SIZE];
 
 q15_t FFT_Scale[FFT_SIZE * 2];
 q15_t FFT_Magnitude[FFT_SIZE];
@@ -44,10 +31,10 @@ arm_rfft_instance_q15 fft_inst;
 arm_cfft_radix4_instance_q15 aux_inst;
 
 uint8_t export_fft_power[ft8_msg_samples * ft8_buffer * 4];
+static float ft_blackman_i(int i, int N);
 
 void init_DSP(void)
 {
-  // arm_rfft_init_q15(&fft_inst, &aux_inst, FFT_SIZE, 0, 1);
   arm_rfft_init_q15(&fft_inst, FFT_SIZE, 0, 1);
   for (int i = 0; i < FFT_SIZE; ++i)
     window[i] = ft_blackman_i(i, FFT_SIZE);
@@ -87,8 +74,12 @@ void extract_power(int offset)
     for (int j = 0; j < FFT_SIZE / 2; j++)
     {
       FFT_Mag_10[j] = 10 * (int32_t)FFT_Magnitude[j];
-      //mag_db[j] = 5.0 * log((float)FFT_Mag_10[j] + 0.1);
-       mag_db[j] =  10.0 * log((float)FFT_Mag_10[j] + 0.1);
+
+  
+      mag_db[j] = 10.0 * log((float)FFT_Mag_10[j] + 0.1);
+
+    
+
     }
 
     // Loop over two possible frequency bin offsets (for averaging)

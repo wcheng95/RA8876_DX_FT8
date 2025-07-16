@@ -1,3 +1,4 @@
+#pragma once
 
 #include "arm_math.h"
 
@@ -9,12 +10,14 @@
 #define ft8_buffer 348 //arbitrary for 2.175 kc
 #define ft8_min_bin 48
 #define FFT_Resolution 6.25
-#define ft8_min_freq FFT_Resolution *ft8_min_bin
 
 #define ft8_msg_samples 91
 
-void init_DSP(void);
-float ft_blackman_i(int i, int N);
+extern int offset_index;
+extern uint8_t export_fft_power[];
 
+void init_DSP(void);
 void process_FT8_FFT(void);
 void update_offset_waterfall(int offset);
+
+

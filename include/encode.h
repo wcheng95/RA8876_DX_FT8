@@ -4,11 +4,6 @@
 
 #include <stdint.h>
 
-// Generate FT8 tone sequence from payload data
-// [IN] payload - 9 byte array consisting of 72 bit payload
-// [OUT] itone  - array of NN (79) bytes to store the generated tones (encoded as 0..7)
-void genft8(const uint8_t *payload, uint8_t *itone);
-
 // Encode an 87-bit message and return a 174-bit codeword.
 // The generator matrix has dimensions (87,87).
 // The code is a (174,87) regular ldpc code with column weight 3.

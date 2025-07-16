@@ -1,29 +1,19 @@
 #include <RA8876_t3.h>
-extern RA8876_t3 tft;
-
-#include "display.h"
-#include <TimeLib.h>
-
+#include <Audio.h>
+#include <si5351.h>
 #include <SD.h>
 #include <SPI.h>
+
+#include <TimeLib.h>
+
+#include "display.h"
 #include "decode_ft8.h"
 #include "ADIF.h"
 #include "button.h"
+#include "main.h"
+#include "gen_ft8.h"
 
 File stationData_File;
-
-extern char file_name_string[24];
-
-extern time_t getTeensy3Time();
-extern char Station_Call[]; // six character call sign + /0
-extern char Locator[];      // four character locator  + /0
-extern char Free_Text1[];
-extern char Free_Text2[];
-
-extern int left_hand_message;
-extern int kMax_message_length;
-
-extern int Band_Minimum;
 
 int max_log_messages = 10;
 display_message_details log_messages[10];
@@ -40,16 +30,6 @@ void display_value(int x, int y, int value)
   tft.setCursor(x, y);
   tft.setFontSize(2, true);
   tft.write(string, 5);
-}
-
-void show_short(uint16_t x, uint16_t y, uint8_t variable)
-{
-  char string[4];
-  sprintf(string, "%2i", variable);
-  tft.textColor(YELLOW, BLACK);
-  tft.setCursor(x, y);
-  tft.setFontSize(2, true);
-  tft.write(string, 3);
 }
 
 void show_wide(uint16_t x, uint16_t y, int variable)
@@ -165,7 +145,7 @@ void display_revision_level(void)
   tft.write("Hardware: V3.0", 14);
 
   tft.setCursor(0, 160);
-  tft.write("Firmware: V1.0", 14);
+  tft.write("Firmware: V1.1", 14);
 
   tft.setCursor(0, 190);
   tft.write("W5BAA - WB2CBA", 14);
@@ -184,25 +164,6 @@ void display_revision_level(void)
   tft.write("Gears & Pulleys", 15);
   tft.setCursor(0, 330);
   tft.write("Are Aligned", 12);
-}
-
-void show_degrees(uint16_t x, uint16_t y, int32_t variable)
-{
-  char str[23];
-  float scaled_variable, remainder;
-  int units, fraction;
-  scaled_variable = (float)variable / 10000000;
-  units = (int)scaled_variable;
-  remainder = scaled_variable - units;
-  fraction = (int)(remainder * 1000);
-  if (fraction < 0)
-    fraction = fraction * -1;
-  sprintf(str, "%3i.%3i", units, fraction);
-
-  tft.textColor(YELLOW, BLACK);
-  tft.setCursor(x, y);
-  tft.setFontSize(2, true);
-  tft.write(str, 20);
 }
 
 void show_decimal(uint16_t x, uint16_t y, float variable)

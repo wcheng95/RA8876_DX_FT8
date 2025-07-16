@@ -1,6 +1,6 @@
-#include "text.h"
-
 #include <string.h>
+
+#include "text.h"
 
 const char *trim_front(const char *str)
 {

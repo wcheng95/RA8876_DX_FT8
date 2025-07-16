@@ -5,34 +5,35 @@
  *      Author: user
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <math.h>
+#include <string.h>
+
+#include <RA8876_t3.h>
+#include <Audio.h>
+#include <si5351.h>
+
 #include <TimeLib.h>
+
+#include "arm_math.h"
+
 #include "pack.h"
 #include "encode.h"
 #include "constants.h"
 #include "gen_ft8.h"
-#include <stdio.h>
-
-#include <RA8876_t3.h>
-extern RA8876_t3 tft;
-
-#include "arm_math.h"
-#include <string.h>
 #include "decode_ft8.h"
 #include "display.h"
 #include "traffic_manager.h"
 #include "ADIF.h"
+#include "main.h"
+#include "button.h"
 
-extern char Station_Call[];
-extern char Locator[];
 char Target_Call[7];    // six character call sign + /0
 char Target_Locator[5]; // four character locator  + /0
 int Target_RSL;         // four character RSL  + /0
 int Station_RSL;
-extern int RR73_sent;
 
 const char Beacon_73[] = "RR73";
 const char QSO_73[] = "73";
@@ -42,25 +43,20 @@ const char CQ[] = "CQ";
 const char SOTA[] = "SOTA";
 const char POTA[] = "POTA";
 const char QRP[] = "QRP";
-
-extern char file_name_string[24];
-
 char display_message[26];
-extern char blank[];
-
-extern time_t getTeensy3Time();
-
-extern int Target_Flag;
 
 char ft8_time_string[] = "15:44:15";
-
 int left_hand_message = 300;
-
 char xmit_messages[3][19];
 
-
-extern int CQ_Mode_Index;
-extern int Free_Index;
+static int in_range(int num, int min, int max)
+{
+  if (num < min)
+    return min;
+  if (num > max)
+    return max;
+  return num;
+}
 
 void compose_messages(void)
 {
@@ -77,15 +73,13 @@ void compose_messages(void)
   strcpy(xmit_messages[2], blank);
   sprintf(xmit_messages[2], "%s %s %s", Target_Call, Station_Call, seventy_three);
 
-  tft.fillRect(left_hand_message, 520, 240, 20, BLACK);
+  tft.fillRect(left_hand_message, 500, 240, 18, BLACK);
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
 
-  tft.setCursor(left_hand_message, 520);
+  tft.setCursor(left_hand_message, 500);
   tft.write(xmit_messages[0], 18);
 }
-
-extern char current_message[];
 
 void que_message(int index)
 {
@@ -97,22 +91,13 @@ void que_message(int index)
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
 
-  tft.setCursor(left_hand_message, 520);
-  tft.write(xmit_messages[index], 19);
+  tft.setCursor(left_hand_message, 500);
+  tft.write(xmit_messages[index], 18);
 
   strcpy(current_message, xmit_messages[index]);
 
   if (index == 2 && Station_RSL != 99)
     write_ADIF_Log();
-}
-
-int in_range(int num, int min, int max)
-{
-  if (num < min)
-    return min;
-  if (num > max)
-    return max;
-  return num;
 }
 
 void set_reply(ReplyID replyId)
@@ -159,13 +144,13 @@ void set_reply(ReplyID replyId)
 
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
-  tft.setCursor(left_hand_message, 520);
+  tft.setCursor(left_hand_message, 500);
   tft.write(reply_message, 18);
 }
 
 void clear_reply_message_box(void)
 {
-  tft.fillRect(left_hand_message, 100, 290, 420, BLACK);
+  tft.fillRect(left_hand_message, 100, 290, 430, BLACK);
 }
 
 char Free_Text1[] = "FreeText 1   ";
@@ -174,8 +159,10 @@ char Free_Text2[] = "FreeText 2   ";
 void set_cq(void)
 {
   const char CQ[] = "CQ";
-  //char CQ_message[19];
-  char CQ_message[] = "                   ";
+
+  char CQ_message[] = "                  ";
+
+
   uint8_t packed[K_BYTES];
 
   if (Free_Index == 0)
@@ -183,9 +170,6 @@ void set_cq(void)
     const char *mode = NULL;
     switch (CQ_Mode_Index)
     {
-    default:
-    case 0:
-      break;
     case 1:
       mode = SOTA;
       break;
@@ -210,9 +194,6 @@ void set_cq(void)
   {
     switch (Free_Index)
     {
-    default:
-    case 0:
-      break;
     case 1:
       strcpy(CQ_message, Free_Text1);
       break;
@@ -229,26 +210,17 @@ void set_cq(void)
 
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
-  tft.setCursor(left_hand_message, 520);
+  tft.setCursor(left_hand_message, 500);
   tft.write(CQ_message, 18);
 }
 
 void erase_CQ(void)
 {
-  char CQ_message[] = "                  ";
+  char CQ_message[] = "                   ";
   tft.setFontSize(2, true);
   tft.textColor(BLACK, BLACK);
-  tft.setCursor(left_hand_message, 520);
+  tft.setCursor(left_hand_message, 500);
   tft.write(CQ_message, 18);
-}
-
-void clear_qued_message(void)
-{
-  char qued_message[] = "                  ";
-
-  tft.setFontSize(2, true);
-  tft.setCursor(left_hand_message, 520);
-  tft.write(qued_message, 18);
 }
 
 void clear_xmit_messages(void)
@@ -256,6 +228,6 @@ void clear_xmit_messages(void)
   char xmit_message[] = "                  ";
 
   tft.setFontSize(2, true);
-  tft.setCursor(left_hand_message, 520);
+  tft.setCursor(left_hand_message, 500);
   tft.write(xmit_message, 18);
 }

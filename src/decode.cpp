@@ -5,13 +5,14 @@
  *      Author: user
  */
 
-#include "display.h"
-#include "decode.h"
+#include <RA8876_t3.h>
+#include <Audio.h>
 
 #include <math.h>
 
+#include "display.h"
+#include "decode.h"
 #include "constants.h"
-
 #include "Process_DSP.h"
 
 static float max2(float a, float b);

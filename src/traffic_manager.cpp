@@ -1,34 +1,15 @@
+#include <RA8876_t3.h>
+#include <Audio.h>
+#include <si5351.h>
 
 #include "traffic_manager.h"
 #include "display.h"
 #include "decode_ft8.h"
 #include "gen_ft8.h"
 #include "button.h"
-
-#include <si5351.h>
-#include <Audio.h>
+#include "main.h"
 
 #define FT8_TONE_SPACING 625
-
-extern Si5351 si5351;
-extern AudioControlSGTL5000 sgtl5000_1;
-extern AudioAmplifier amp1;
-
-extern int RF_Gain;
-extern uint16_t currentFrequency;
-extern int xmit_flag, ft8_xmit_counter, Transmit_Armned;
-
-// int max_QSO_calls = 5;
-
-extern uint16_t cursor_freq;
-extern uint16_t start_freq;
-extern uint8_t RX_volume;
-
-extern int Beacon_On;
-extern int Beacon_State;
-extern int num_decoded_msg;
-extern int QSO_xmit;
-extern int Auto_QSO_State; // chh
 
 int RSL_sent;
 int QSO_xmit_count;
@@ -36,7 +17,7 @@ int RR73_sent;
 
 uint64_t F_Long, F_FT8, F_Receive;
 
-void set_Xmit_Freq(void)
+static void set_Xmit_Freq(void)
 {
   F_Long = (((uint64_t)start_freq * 1000 + (uint64_t)cursor_freq) * 100);
   si5351.set_freq(F_Long, SI5351_CLK0);
@@ -46,7 +27,7 @@ void tune_On_sequence(void)
 {
   set_Xmit_Freq();
   transmit_sequence();
-  sgtl5000_1.lineInLevel(0);
+  sgtl5000.lineInLevel(0);
   set_RF_Gain(1);
   set_Attenuator_Gain(0.05);
   delay(10);
@@ -58,7 +39,7 @@ void tune_Off_sequence(void)
 {
   si5351.output_enable(SI5351_CLK0, 0);
   delay(10);
-  sgtl5000_1.lineInLevel(RX_volume);
+  sgtl5000.lineInLevel(RX_volume);
   set_RF_Gain(RF_Gain);
   set_Attenuator_Gain(1.0);
   set_xmit_button(false);
@@ -73,7 +54,7 @@ void set_FT8_Tone(uint8_t ft8_tone)
 void ft8_receive_sequence(void)
 {
   si5351.output_enable(SI5351_CLK0, 0);
-  sgtl5000_1.lineInLevel(RX_volume);
+  sgtl5000.lineInLevel(RX_volume);
   set_RF_Gain(RF_Gain);
   set_Attenuator_Gain(1.0);
 }
@@ -82,7 +63,7 @@ void ft8_transmit_sequence(void)
 {
   set_Xmit_Freq();
   si5351.set_freq(F_Long, SI5351_CLK0);
-  sgtl5000_1.lineInLevel(0);
+  sgtl5000.lineInLevel(0);
   set_RF_Gain(1);
   set_Attenuator_Gain(0.05);
   delay(10);
@@ -106,7 +87,6 @@ void terminate_QSO(void)
 
 void service_QSO_mode(int decoded_signals)
 {
-
   int receive_status = Check_Calling_Stations(decoded_signals);
   if (receive_status == 1 && Auto_QSO_State != 2 && RSL_sent == 0)
   {
