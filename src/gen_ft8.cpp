@@ -159,7 +159,9 @@ char Free_Text2[] = "FreeText 2   ";
 void set_cq(void)
 {
   const char CQ[] = "CQ";
+
   char CQ_message[] = "                  ";
+
 
   uint8_t packed[K_BYTES];
 

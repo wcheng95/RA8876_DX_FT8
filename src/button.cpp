@@ -710,6 +710,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[StandardCQ].state = 1;
       drawButton(StandardCQ);
     }
+
     break;
 
   case CQSOTA:
@@ -720,6 +721,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[CQSOTA].state = 1;
       drawButton(CQSOTA);
     }
+
     break;
 
   case CQPOTA:
@@ -730,6 +732,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[CQPOTA].state = 1;
       drawButton(CQPOTA);
     }
+
     break;
 
   case QRPP:
@@ -740,6 +743,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[QRPP].state = 1;
       drawButton(QRPP);
     }
+
     break;
 
   case 21:
@@ -758,6 +762,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[FreeText1].state = 0;
       drawButton(FreeText1);
     }
+
     break;
 
   case FreeText2:
@@ -776,6 +781,7 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[FreeText2].state = 0;
       drawButton(FreeText2);
     }
+
     break;
   }
 }
@@ -884,6 +890,7 @@ int testButton(uint8_t index)
 {
   if ((draw_x > sButtonData[index].x) && (draw_x < sButtonData[index].x + sButtonData[index].w) && (draw_y > sButtonData[index].y) && (draw_y <= sButtonData[index].y + sButtonData[index].h))
   {
+
     return 1;
   }
   else
@@ -1027,6 +1034,7 @@ void reset_buttons(int btn1, int btn2, int btn3, const char *button_text)
   drawButton(btn3);
   sButtonData[4].text0 = (char *)button_text;
   drawButton(4);
+
 }
 
 void update_CQFree_button()
