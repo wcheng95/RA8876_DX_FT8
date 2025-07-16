@@ -97,14 +97,14 @@ int ft8_decode(void)
 
     char message[kMax_message_length];
 
-    char field1[14];
-    char field2[14];
-    char field3[7];
-    int rc = unpack77_fields(a91, field1, field2, field3);
+    char call_to[14];
+    char call_from[14];
+    char locator[7];
+    int rc = unpack77_fields(a91, call_to, call_from, locator);
     if (rc < 0)
       continue;
 
-    sprintf(message, "%s %s %s ", field1, field2, field3);
+    sprintf(message, "%s %s %s ", call_to, call_from, locator);
 
     // Check for duplicate messages (TODO: use hashing)
     bool found = false;
@@ -136,9 +136,9 @@ int ft8_decode(void)
 
         new_decoded[num_decoded].sync_score = cand.score;
         new_decoded[num_decoded].freq_hz = (int)freq_hz;
-        strcpy(new_decoded[num_decoded].field1, field1);
-        strcpy(new_decoded[num_decoded].field2, field2);
-        strcpy(new_decoded[num_decoded].field3, field3);
+        strcpy(new_decoded[num_decoded].call_to, call_to);
+        strcpy(new_decoded[num_decoded].call_from, call_from);
+        strcpy(new_decoded[num_decoded].locator, locator);
         strcpy(new_decoded[num_decoded].decode_time, rtc_string);
 
         new_decoded[num_decoded].slot = slot_state;
@@ -150,7 +150,7 @@ int ft8_decode(void)
         char Test_Locator[] = "    ";
         char FT8_Message[] = "    ";
 
-        strcpy(Test_Locator, new_decoded[num_decoded].field3);
+        strcpy(Test_Locator, new_decoded[num_decoded].locator);
 
         if (validate_locator(Test_Locator) == 1)
         {
@@ -158,7 +158,7 @@ int ft8_decode(void)
           new_decoded[num_decoded].sequence = Seq_Locator;
         }
 
-        strcpy(FT8_Message, new_decoded[num_decoded].field3);
+        strcpy(FT8_Message, new_decoded[num_decoded].locator);
 
         if (strindex(FT8_Message, "73") >= 0 || strindex(FT8_Message, "RR73") >= 0 || strindex(FT8_Message, "RRR") >= 0)
         {
@@ -200,21 +200,21 @@ void display_messages(int decoded_messages)
 
     strcpy(display[i].message, blank);
 
-    if (strcmp(CQ, new_decoded[i].field1) == 0)
+    if (strcmp(CQ, new_decoded[i].call_to) == 0)
     {
 
-      if (strcmp(Station_Call, new_decoded[i].field2) != 0)
+      if (strcmp(Station_Call, new_decoded[i].call_from) != 0)
       {
-        sprintf(display[i].message, "%s %s %s %2i", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3, new_decoded[i].snr);
+        sprintf(display[i].message, "%s %s %s %2i", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator, new_decoded[i].snr);
       }
       else
-        sprintf(display[i].message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
+        sprintf(display[i].message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
       display[i].text_color = 1;
     }
 
     else
     {
-      sprintf(display[i].message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
+      sprintf(display[i].message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
       display[i].text_color = 0;
     }
 
@@ -297,9 +297,9 @@ void clear_decoded_messages(void)
 
   for (int i = 0; i < kMax_decoded_messages; i++)
   {
-    strcpy(new_decoded[i].field1, call_blank);
-    strcpy(new_decoded[i].field2, call_blank);
-    strcpy(new_decoded[i].field3, locator_blank);
+    strcpy(new_decoded[i].call_to, call_blank);
+    strcpy(new_decoded[i].call_from, call_blank);
+    strcpy(new_decoded[i].locator, locator_blank);
     strcpy(new_decoded[i].target_locator, locator_blank);
     new_decoded[i].freq_hz = 0;
     new_decoded[i].sync_score = 0;
@@ -320,13 +320,13 @@ int Check_Calling_Stations(int num_decoded)
     int old_call;
     int old_call_address = 0;
 
-    if (strindex(new_decoded[i].field1, Station_Call) >= 0)
+    if (strindex(new_decoded[i].call_to, Station_Call) >= 0)
     {
       old_call = 0;
 
       for (int j = 0; j < num_calls; j++)
       {
-        if (strcmp(Answer_CQ[j].call, new_decoded[i].field2) == 0)
+        if (strcmp(Answer_CQ[j].call, new_decoded[i].call_from) == 0)
         {
           old_call = Answer_CQ[j].number_times_called;
           old_call++;
@@ -337,12 +337,12 @@ int Check_Calling_Stations(int num_decoded)
 
       if (old_call == 0)
       {
-        sprintf(received_message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
+        sprintf(received_message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
         strcpy(current_message, received_message);
 
         update_message_log_display(0);
 
-        strcpy(Target_Call, new_decoded[i].field2);
+        strcpy(Target_Call, new_decoded[i].call_from);
 
         if (Beacon_On == 1)
           Target_RSL = new_decoded[i].snr;
@@ -362,7 +362,7 @@ int Check_Calling_Stations(int num_decoded)
 
         Beacon_Reply_Status = 1;
 
-        strcpy(Answer_CQ[num_calls].call, new_decoded[i].field2);
+        strcpy(Answer_CQ[num_calls].call, new_decoded[i].call_from);
         strcpy(Answer_CQ[num_calls].locator, new_decoded[i].target_locator);
         Answer_CQ[num_calls].RSL = Target_RSL;
         Answer_CQ[num_calls].received_RSL = Station_RSL;
@@ -374,7 +374,7 @@ int Check_Calling_Stations(int num_decoded)
 
       if (old_call >= 1 && old_call < 5)
       {
-        sprintf(received_message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
+        sprintf(received_message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
         strcpy(current_message, received_message);
         update_message_log_display(0);
 
@@ -443,7 +443,7 @@ void process_selected_Station(int stations_decoded, int TouchIndex)
 {
   if (stations_decoded > 0 && TouchIndex <= stations_decoded)
   {
-    strcpy(Target_Call, new_decoded[TouchIndex].field2);
+    strcpy(Target_Call, new_decoded[TouchIndex].call_from);
     strcpy(Target_Locator, new_decoded[TouchIndex].target_locator);
     Target_RSL = new_decoded[TouchIndex].snr;
     target_slot = new_decoded[TouchIndex].slot;
