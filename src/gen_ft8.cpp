@@ -231,3 +231,13 @@ void clear_xmit_messages(void)
   tft.setCursor(left_hand_message, 500);
   tft.write(xmit_message, 18);
 }
+
+
+// Needed by autoseq_engine
+void queue_custom_text(const char *tx_msg)
+{
+	uint8_t packed[K_BYTES];
+
+	pack77(tx_msg, packed);
+	genft8(packed, tones);
+}

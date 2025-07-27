@@ -72,6 +72,11 @@ int Free_Index;
 
 int Map_Index;
 
+extern bool clr_pressed;
+extern bool free_text;
+extern bool tx_pressed;
+int Skip_Tx1;
+
 #define numButtons 23
 #define button_height 100
 #define button_height_Low 60
@@ -492,6 +497,7 @@ void executeButton(uint16_t index)
     drawButton(0);
     delay(40);
 
+    /*
     clear_xmit_messages();
     terminate_QSO();
     Auto_QSO_State = 0;
@@ -499,8 +505,10 @@ void executeButton(uint16_t index)
     clear_reply_message_box();
     clear_log_stored_data();
     clear_log_messages();
-
     erase_CQ();
+    */
+
+    clr_pressed = true;
     sButtonData[0].state = 0;
     drawButton(0);
 
@@ -511,16 +519,20 @@ void executeButton(uint16_t index)
     {
       Beacon_On = 0;
       Beacon_State = 0;
+      /*
       clear_reply_message_box();
       clear_log_messages();
       clear_log_stored_data();
+      */
     }
     else
     {
       Beacon_On = 1;
+      /*
       clear_reply_message_box();
       clear_log_stored_data();
-      clear_log_messages();
+      clear_log_messages();*/
+
       Beacon_State = 1;
     }
 
@@ -530,11 +542,11 @@ void executeButton(uint16_t index)
   case 2:
     if (!sButtonData[2].state)
     {
-      tune_Off_sequence();
+      //tune_Off_sequence();
       Tune_On = 0;
-      Arm_Tune = 0;
-      xmit_flag = 0;
-      receive_sequence();
+      //Arm_Tune = 0;
+      //xmit_flag = 0;
+      //receive_sequence();
       erase_Cal_Display();
       delay(5);
     }
@@ -542,7 +554,7 @@ void executeButton(uint16_t index)
     {
       Tune_On = 1; // Turns off display of FT8 traffic
       setup_Cal_Display();
-      Arm_Tune = 0;
+      //Arm_Tune = 0;
     }
     break;
 
@@ -572,7 +584,7 @@ void executeButton(uint16_t index)
     else
     {
       Auto_Sync = 1;
-      Be_Patient();
+      //Be_Patient();
     }
     break;
 

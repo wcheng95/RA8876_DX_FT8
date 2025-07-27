@@ -13,26 +13,15 @@
 #include <stdio.h>
 
 #include "autoseq_engine.h"
-//#include "qso_display.h" // For adding worked qso entry
 #include "gen_ft8.h" // For accessing CQ_Mode_Index and saving Target_*
 #include "ADIF.h"    // For write_ADIF_Log()
-
-// HAL
-#ifdef HOST_HAL_MOCK
-#include "host_mocks.h"
-#else
 #include "button.h"  // For BandIndex
-//#include "DS3231.h"  // For log_rtc_time_string
-#endif
 
 extern int Beacon_On; // TODO get rid of manual extern
 extern int Skip_Tx1;  // TODO get rid of manual extern
 
 /***** Compile‑time knobs *****/
-//#define MAX_TX_RETRY 5
-
-#define MAX_TX_RETRY 3
-
+#define MAX_TX_RETRY 5
 
 extern char log_rtc_date_string[9];
 extern char log_rtc_time_string[9];
@@ -556,8 +545,8 @@ static void write_worked_qso()
     static const char band_strs[][4] = {
         "40", "30", "20", "17", "15", "12", "10"
     };
-    //char *buf = add_worked_qso();
-    char *buf;
+    char *buf = add_worked_qso();
+   // char *buf;
     // band, HH:MM, callsign, SNR
     // snprintf(buf, MAX_LINE_LEN, "%.4s %.3s %-7.7s%+02d %+02d",
     int printed = snprintf(buf, MAX_LINE_LEN, "%.4s %.3s %.12s",

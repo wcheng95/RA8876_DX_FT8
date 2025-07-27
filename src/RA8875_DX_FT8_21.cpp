@@ -29,6 +29,8 @@
 #include "ADIF.h"
 #include "AudioSDRpreProcessor.h"
 #include "main.h"
+#include "autoseq_engine.h"
+#include "ADIF.h"
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
@@ -38,6 +40,21 @@
 #define CTP_INT 27 // Use an interrupt capable pin such as pin 2 (any pin on a Teensy)
 
 #define MAXTOUCHLIMIT 1
+
+
+// Used for skipping the TX slot
+int was_txing = 0;
+bool clr_pressed = false;
+bool free_text = false;
+bool tx_pressed = false;
+
+// Autoseq TX text buffer
+static char autoseq_txbuf[MAX_MSG_LEN];
+// Autoseq current QSO state text
+static char autoseq_state_str[MAX_LINE_LEN];
+
+static bool worked_qsos_in_display = false;
+
 
 RA8876_t3 tft = RA8876_t3(RA8876_CS, RA8876_RESET);
 Si5351 si5351;
@@ -142,14 +159,35 @@ int slot_state = 0;
 int target_slot;
 int target_freq;
 
+
+
 static void process_data();
 static void parse_NEMA(void);
 static void update_synchronization();
 static void copy_to_fft_buffer(void *destination, const void *source);
 
+
+void tx_display_update(void);
+
+// Helper function for updating TX region display
+void tx_display_update(void)
+{
+	if (Tune_On || worked_qsos_in_display) {
+		return;
+	}
+	if (xmit_flag) {
+		display_txing_message(autoseq_txbuf);
+	} else {
+		display_queued_message(autoseq_txbuf);
+	}
+	autoseq_get_qso_state(autoseq_state_str);
+	display_qso_state(autoseq_state_str);
+}
+
 void setup(void)
 {
   Serial.begin(9600);
+
 
   if (CrashReport)
   {
@@ -235,7 +273,9 @@ void setup(void)
   display_value(620, 559, RF_Gain);
 
   Init_Log_File();
-  draw_map(Map_Index);
+  //draw_map(Map_Index);
+
+  autoseq_init(Station_Call, Locator);
 }
 
 void loop()
@@ -272,32 +312,114 @@ void loop()
 
   if (decode_flag == 1 && Tune_On == 0 && xmit_flag == 0)
   {
-    // toggle the slot state
-    slot_state = (slot_state == 0) ? 1 : 0;
-    clear_decoded_messages();
+ 
+   // clear_decoded_messages();
 
     master_decoded = ft8_decode();
-    if (master_decoded > 0)
-      display_messages(master_decoded);
+  
+     // if (master_decoded > 0)display_messages(new_decoded, master_decoded);
+      display_messages(new_decoded, master_decoded);
 
-    if (Beacon_On == 1)
-      service_Beacon_mode(master_decoded);
-    else if (Beacon_On == 0)
-      service_QSO_mode(master_decoded);
+      
+      for (int i = 0; i < master_decoded; ++i) {
+
+        if  ( strindex(new_decoded[i].call_to, Station_Call) >= 0    ) {
+
+        char received_message[40];
+        sprintf(received_message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
+        strcpy(current_message, received_message);
+        update_message_log_display(0);
+        }
+
+      }
+
+      
+			
+
+    if (!was_txing) {
+				for (int i = 0; i < master_decoded; i++)
+				{
+					// TX is (potentially) necessary
+					if (autoseq_on_decode(&new_decoded[i]))
+					{
+						// Fetch TX msg
+						if (autoseq_get_next_tx(autoseq_txbuf))
+						{
+							//_debug("QSO_xmit,rspnd");
+							queue_custom_text(autoseq_txbuf);
+							QSO_xmit = 1;
+							tx_display_update();
+							break;
+						}
+					}
+				}
+
+				// No valid response has received to advance auto sequencing.
+				// Check TX retry is needed?
+				// Yes => QSO_xmit = True;
+				// No  => check in beacon mode?
+				//       Yes => start_cq, QSO_xmit = True;
+				//       No  => QSO_xmit = False;
+				if (!QSO_xmit)
+				{
+					// Check if retry is necessary
+					if (autoseq_get_next_tx(autoseq_txbuf))
+					{
+						queue_custom_text(autoseq_txbuf);
+						QSO_xmit = 1;
+					}
+					else if (Beacon_On)
+					{
+						target_slot = slot_state ^ 1;
+						autoseq_start_cq();
+						autoseq_get_next_tx(autoseq_txbuf);
+						queue_custom_text(autoseq_txbuf);
+						QSO_xmit = 1;
+						tx_display_update();
+					}
+				}
+			}
 
     decode_flag = 0;
   } // end of servicing FT_Decode
 
-  if (Serial1.available())
-    parse_NEMA();
+  //if (Serial1.available())  parse_NEMA();
 
   process_touch();
 
-  if (Tune_On == 0 && FT8_Touch_Flag == 1 && Beacon_On == 0)
-    process_selected_Station(master_decoded, FT_8_TouchIndex);
+if (clr_pressed) {
+			terminate_QSO();
+			QSO_xmit = 0;
+			was_txing = 0;
+			autoseq_init(Station_Call, Locator);
+			autoseq_txbuf[0] = '\0';
+			tx_display_update();
+			clr_pressed = false;
+		}
+
+    
+		if (tx_pressed) {
+			worked_qsos_in_display = display_worked_qsos();
+			tx_pressed = false;
+			tx_display_update();
+		}
+    
+
+		if (!Tune_On && FT8_Touch_Flag && FT_8_TouchIndex < master_decoded) {
+			process_selected_Station(master_decoded, FT_8_TouchIndex);
+			autoseq_on_touch(&new_decoded[FT_8_TouchIndex]);
+			autoseq_get_next_tx(autoseq_txbuf);
+			queue_custom_text(autoseq_txbuf);
+			QSO_xmit = 1;
+			FT8_Touch_Flag = 0;
+			tx_display_update();
+		}
+    
 
   update_synchronization();
 }
+
+
 
 time_t getTeensy3Time()
 {
@@ -330,33 +452,53 @@ static void copy_to_fft_buffer(void *destination, const void *source)
   memcpy(destination, source, AUDIO_BLOCK_SAMPLES * sizeof(uint16_t));
 }
 
-void update_synchronization()
-{
-  current_time = millis();
-  ft8_time = current_time - start_time;
-  ft8_hours = (int8_t)(ft8_time / 3600000);
-  hours_fraction = ft8_time % 3600000;
-  ft8_minutes = (int8_t)(hours_fraction / 60000);
-  ft8_seconds = (int8_t)((hours_fraction % 60000) / 1000);
 
-  if (ft8_flag == 0 && ft8_time % 15000 <= 200)
-  {
-    ft8_flag = 1;
-    FT_8_counter = 0;
-    ft8_marker = 1;
+static void update_synchronization(void)
+{
+	uint32_t current_time = millis();;
+	ft8_time = current_time - start_time;
+
+	// Update slot and reset RX
+	int current_slot = ft8_time / 15000 % 2;
+	if (current_slot != slot_state)
+	{
+		// toggle the slot state
+
+		slot_state ^= 1;
+		if (was_txing) {
+			autoseq_tick();
+		}
+		was_txing = 0;
+
+		ft8_flag = 1;
+		FT_8_counter = 0;
+		ft8_marker = 1;
     WF_counter = 0;
 
-    show_decimal(680, 60, flat);
-    show_decimal(880, 60, flon);
+		tx_display_update();
+	}
 
-    if (QSO_xmit == 1 && target_slot == slot_state)
-    {
-      setup_to_transmit_on_next_DSP_Flag();
-      update_message_log_display(1);
-      QSO_xmit = 0;
+	// Check if TX is intended
+	if (QSO_xmit && target_slot == slot_state && FT_8_counter < 29)
+	{
+		setup_to_transmit_on_next_DSP_Flag(); // TODO: move to main.c
+		QSO_xmit = 0;
+		was_txing = 1;
+		// Partial TX, set the TX counter based on current ft8_time
+		ft8_xmit_counter = (ft8_time % 15000) / 160; // 160ms per symbol
+		// Log the TX
+		//char log_str[128];
+    
+    if  ( strindex(autoseq_txbuf, "CQ") < 0) {
+    strcpy(current_message, autoseq_txbuf);
+    update_message_log_display(1);
     }
-  }
+    
+    
+		tx_display_update();
+	}
 }
+
 
 void sync_FT8(void)
 {
@@ -402,3 +544,4 @@ void parse_NEMA(void)
     }
   }
 }
+

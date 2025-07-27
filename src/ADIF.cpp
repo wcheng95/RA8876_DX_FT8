@@ -73,7 +73,7 @@ static float Target_Latitude, Target_Longitude;
 
 static File Log_File;
 
-static void make_date(void)
+void make_date(void)
 {
   getTeensy3Time();
   sprintf(log_rtc_date_string, "%4i%2i%2i", year(), month(), day());
@@ -392,3 +392,20 @@ double rad2deg(double rad)
 {
   return (rad * 180) / PI;
 }
+
+/*
+void Write_RxTxLog_Data(const char *str)
+{
+	f_mount(&FS, "SD:", 1);
+	if (f_open(&RxTxLogFile, "RxTxLog.txt",
+			   FA_OPEN_ALWAYS | FA_WRITE | FA_OPEN_APPEND) == FR_OK)
+	{
+		f_lseek(&RxTxLogFile, f_size(&RxTxLogFile));
+		f_puts(str, &RxTxLogFile);
+		f_puts("\n", &RxTxLogFile);
+	}
+
+	f_close(&RxTxLogFile);
+}
+
+*/

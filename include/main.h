@@ -1,5 +1,12 @@
 
 #pragma once
+#include <Audio.h>
+#include <RA8876_t3.h>
+#include <si5351.h>
+#include "arm_math.h"
+
+
+
 
 extern int FT_8_counter;
 extern int ft8_marker;

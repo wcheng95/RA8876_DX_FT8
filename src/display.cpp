@@ -12,6 +12,7 @@
 #include "button.h"
 #include "main.h"
 #include "gen_ft8.h"
+#include "autoseq_engine.h"
 
 File stationData_File;
 
@@ -145,7 +146,7 @@ void display_revision_level(void)
   tft.write("Hardware: V3.0", 14);
 
   tft.setCursor(0, 160);
-  tft.write("Firmware: V1.1", 14);
+  tft.write("Firmware: V1.3", 14);
 
   tft.setCursor(0, 190);
   tft.write("W5BAA - WB2CBA", 14);
@@ -164,6 +165,10 @@ void display_revision_level(void)
   tft.write("Gears & Pulleys", 15);
   tft.setCursor(0, 330);
   tft.write("Are Aligned", 12);
+
+
+  tft.fillRect(0, 100, 300, 400, BLACK);
+  
 }
 
 void show_decimal(uint16_t x, uint16_t y, float variable)
@@ -225,7 +230,8 @@ void update_message_log_display(int mode)
     log_messages[max_log_messages - 1].text_color = 0;
   }
 
-  tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
+  //t.fillRect(left_hand_message, 100, 260, 400, BLACK);
+  tft.fillRect(START_X_RIGHT, 140, 260, 400, BLACK);
   tft.setFontSize(2, true);
 
   for (int i = 0; i < max_log_messages; i++)
@@ -235,7 +241,10 @@ void update_message_log_display(int mode)
     else
       tft.textColor(RED, BLACK);
 
-    tft.setCursor(left_hand_message, 100 + i * 40);
+    
+
+    //tft.setCursor(left_hand_message, 100 + i * 40);
+    tft.setCursor(START_X_RIGHT, 140 + i * 40);
     tft.write(log_messages[i].message, 18);
   }
 }

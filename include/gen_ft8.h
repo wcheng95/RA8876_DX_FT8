@@ -38,6 +38,7 @@ void clear_xmit_messages(void);
 // [IN] payload - 9 byte array consisting of 72 bit payload
 // [OUT] itone  - array of NN (79) bytes to store the generated tones (encoded as 0..7)
 void genft8(const uint8_t *payload, uint8_t *itone);
+void queue_custom_text(const char *tx_msg);
 
 extern int Station_RSL;
 extern char Target_Call[];    // six character call sign + /0
@@ -46,5 +47,7 @@ extern char Target_Locator[]; // four character locator  + /0
 extern char Free_Text1[];
 extern char Free_Text2[];
 extern int left_hand_message;
+
+
 
 #endif /* GEN_FT8_H_ */
