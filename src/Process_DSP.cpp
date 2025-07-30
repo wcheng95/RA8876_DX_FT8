@@ -68,18 +68,12 @@ void extract_power(int offset)
 
     arm_rfft_q15(&fft_inst, window_dsp_buffer, dsp_output);
     arm_shift_q15(&dsp_output[0], 5, &FFT_Scale[0], FFT_SIZE * 2);
-    // arm_shift_q15(&dsp_output[0], 6, &FFT_Scale[0], FFT_SIZE * 2 );
     arm_cmplx_mag_squared_q15(&FFT_Scale[0], &FFT_Magnitude[0], FFT_SIZE);
 
     for (int j = 0; j < FFT_SIZE / 2; j++)
     {
       FFT_Mag_10[j] = 10 * (int32_t)FFT_Magnitude[j];
-
-  
-      mag_db[j] = 10.0 * log((float)FFT_Mag_10[j] + 0.1);
-
-    
-
+       mag_db[j] = 10.0 * log((float)FFT_Mag_10[j] + 0.1);
     }
 
     // Loop over two possible frequency bin offsets (for averaging)

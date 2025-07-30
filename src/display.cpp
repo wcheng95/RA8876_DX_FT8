@@ -18,7 +18,7 @@ File stationData_File;
 
 int max_log_messages = 10;
 display_message_details log_messages[10];
-char current_message[40];
+char current_message[22];
 
 int old_rtc_hour;
 
@@ -230,7 +230,7 @@ void update_message_log_display(int mode)
     log_messages[max_log_messages - 1].text_color = 0;
   }
 
-  //t.fillRect(left_hand_message, 100, 260, 400, BLACK);
+  tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
   tft.fillRect(START_X_RIGHT, 140, 260, 400, BLACK);
   tft.setFontSize(2, true);
 
@@ -241,9 +241,6 @@ void update_message_log_display(int mode)
     else
       tft.textColor(RED, BLACK);
 
-    
-
-    //tft.setCursor(left_hand_message, 100 + i * 40);
     tft.setCursor(START_X_RIGHT, 140 + i * 40);
     tft.write(log_messages[i].message, 18);
   }

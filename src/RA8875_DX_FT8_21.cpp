@@ -159,13 +159,10 @@ int slot_state = 0;
 int target_slot;
 int target_freq;
 
-
-
 static void process_data();
 static void parse_NEMA(void);
 static void update_synchronization();
 static void copy_to_fft_buffer(void *destination, const void *source);
-
 
 void tx_display_update(void);
 
@@ -180,27 +177,15 @@ void tx_display_update(void)
 	} else {
 		display_queued_message(autoseq_txbuf);
 	}
-	autoseq_get_qso_state(autoseq_state_str);
-	display_qso_state(autoseq_state_str);
+
 }
 
 void setup(void)
 {
-  Serial.begin(9600);
 
-
-  if (CrashReport)
-  {
-    Serial.print(CrashReport);
-  }
-
-  Serial1.begin(9600);
-
-  init_RxSw_TxSw();
+ // Serial1.begin(9600);
 
   setSyncProvider(getTeensy3Time);
-
-  Serial.println("hello charley");
 
   delay(10);
 
@@ -273,7 +258,7 @@ void setup(void)
   display_value(620, 559, RF_Gain);
 
   Init_Log_File();
-  //draw_map(Map_Index);
+  draw_map(Map_Index);
 
   autoseq_init(Station_Call, Locator);
 }
@@ -313,14 +298,10 @@ void loop()
   if (decode_flag == 1 && Tune_On == 0 && xmit_flag == 0)
   {
  
-   // clear_decoded_messages();
-
     master_decoded = ft8_decode();
-  
-     // if (master_decoded > 0)display_messages(new_decoded, master_decoded);
-      display_messages(new_decoded, master_decoded);
+     
+    display_messages(new_decoded, master_decoded);
 
-      
       for (int i = 0; i < master_decoded; ++i) {
 
         if  ( strindex(new_decoded[i].call_to, Station_Call) >= 0    ) {
@@ -333,9 +314,6 @@ void loop()
 
       }
 
-      
-			
-
     if (!was_txing) {
 				for (int i = 0; i < master_decoded; i++)
 				{
@@ -345,7 +323,6 @@ void loop()
 						// Fetch TX msg
 						if (autoseq_get_next_tx(autoseq_txbuf))
 						{
-							//_debug("QSO_xmit,rspnd");
 							queue_custom_text(autoseq_txbuf);
 							QSO_xmit = 1;
 							tx_display_update();
@@ -474,8 +451,7 @@ static void update_synchronization(void)
 		FT_8_counter = 0;
 		ft8_marker = 1;
     WF_counter = 0;
-
-		tx_display_update();
+	  tx_display_update();
 	}
 
 	// Check if TX is intended
@@ -487,13 +463,10 @@ static void update_synchronization(void)
 		// Partial TX, set the TX counter based on current ft8_time
 		ft8_xmit_counter = (ft8_time % 15000) / 160; // 160ms per symbol
 		// Log the TX
-		//char log_str[128];
-    
     if  ( strindex(autoseq_txbuf, "CQ") < 0) {
     strcpy(current_message, autoseq_txbuf);
     update_message_log_display(1);
     }
-    
     
 		tx_display_update();
 	}
@@ -510,6 +483,7 @@ void sync_FT8(void)
   ft8_marker = 1;
   WF_counter = 0;
 }
+  
 
 void parse_NEMA(void)
 {

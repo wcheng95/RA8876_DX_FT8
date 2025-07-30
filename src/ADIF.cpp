@@ -8,16 +8,12 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-
 #include <SD.h>
 #include <RA8876_t3.h>
 #include <Audio.h>
 #include <si5351.h>
-
 #include <TimeLib.h>
-
 #include "arm_math.h"
-
 #include "button.h"
 #include "display.h"
 #include "ADIF.h"
@@ -78,8 +74,8 @@ void make_date(void)
   getTeensy3Time();
   sprintf(log_rtc_date_string, "%4i%2i%2i", year(), month(), day());
   for (int i = 0; i < 9; i++)
-    if (log_rtc_date_string[i] == 32)
-      log_rtc_date_string[i] = 48;
+  if (log_rtc_date_string[i] == 32)
+  log_rtc_date_string[i] = 48;
 }
 
 void make_time(void)
@@ -87,8 +83,8 @@ void make_time(void)
   getTeensy3Time();
   sprintf(log_rtc_time_string, "%2i%2i%2i", hour(), minute(), second());
   for (int i = 0; i < 9; i++)
-    if (log_rtc_date_string[i] == 32)
-      log_rtc_date_string[i] = 48;
+  if (log_rtc_date_string[i] == 32)
+  log_rtc_date_string[i] = 48;
 }
 
 void make_File_Name(void)
@@ -96,8 +92,8 @@ void make_File_Name(void)
   make_date();
   sprintf((char *)file_name_string, "%s.adi", log_rtc_date_string);
   for (int i = 0; i < 24; i++)
-    if (file_name_string[i] == 32)
-      file_name_string[i] = 48;
+  if (file_name_string[i] == 32)
+  file_name_string[i] = 48;
 }
 
 static void write_log_data(char *data)
@@ -308,7 +304,6 @@ static void draw_QTH(void)
   // Locator is Station Locator which is changed when GPS coordinates indcate you are in different Maidenhead area
   QTH_Distance = Map_Distance(Locator); // Locator is Station Lacator which is changed when GPS coordinates indcate you are in differnt maidehead area
   QTH_Bearing = Map_Bearing(Locator);
-
   draw_vector(QTH_Distance, QTH_Bearing, 3, 2);
 }
 
@@ -393,19 +388,3 @@ double rad2deg(double rad)
   return (rad * 180) / PI;
 }
 
-/*
-void Write_RxTxLog_Data(const char *str)
-{
-	f_mount(&FS, "SD:", 1);
-	if (f_open(&RxTxLogFile, "RxTxLog.txt",
-			   FA_OPEN_ALWAYS | FA_WRITE | FA_OPEN_APPEND) == FR_OK)
-	{
-		f_lseek(&RxTxLogFile, f_size(&RxTxLogFile));
-		f_puts(str, &RxTxLogFile);
-		f_puts("\n", &RxTxLogFile);
-	}
-
-	f_close(&RxTxLogFile);
-}
-
-*/

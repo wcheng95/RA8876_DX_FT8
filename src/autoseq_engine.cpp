@@ -21,7 +21,7 @@ extern int Beacon_On; // TODO get rid of manual extern
 extern int Skip_Tx1;  // TODO get rid of manual extern
 
 /***** Compile‑time knobs *****/
-#define MAX_TX_RETRY 5
+#define MAX_TX_RETRY 2
 
 extern char log_rtc_date_string[9];
 extern char log_rtc_time_string[9];
@@ -62,7 +62,6 @@ typedef struct {
     char mygrid[7];
     char dxcall[14];
     char dxgrid[7];
-
     int  snr_tx;              /* SNR we report to DX (‑dB) */
     int  retry_counter;
     int  retry_limit;
@@ -319,11 +318,9 @@ static void format_tx_text(tx_msg_t id, char out[MAX_MSG_LEN])
             switch (Free_Index)
             {
             case 0:
-                //strncpy(out, Free_Text1, sizeof(Free_Text1) - 1);
                 strncpy(out, Free_Text1, 13);
                 break;
             case 1:
-                //strncpy(out, Free_Text2, sizeof(Free_Text2) - 1);
                 strncpy(out, Free_Text2, 13);
 
                 break;
@@ -546,9 +543,7 @@ static void write_worked_qso()
         "40", "30", "20", "17", "15", "12", "10"
     };
     char *buf = add_worked_qso();
-   // char *buf;
     // band, HH:MM, callsign, SNR
-    // snprintf(buf, MAX_LINE_LEN, "%.4s %.3s %-7.7s%+02d %+02d",
     int printed = snprintf(buf, MAX_LINE_LEN, "%.4s %.3s %.12s",
         log_rtc_time_string,
         band_strs[BandIndex],

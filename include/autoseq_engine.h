@@ -6,21 +6,17 @@
 #include "decode_ft8.h"
 #include "main.h"
 
-#define MAX_MSG_LEN 40
+//#define MAX_MSG_LEN 40
+#define MAX_MSG_LEN 22
 #define MAX_LINE_LEN 22
-
-
 #define MAX_RX_ROWS 10
 #define MAX_QSO_ROWS 10
 #define MAX_QSO_ENTRIES 100
 #define START_X_LEFT 0
-//#define START_X_RIGHT 240
-#define START_X_RIGHT 400
+#define START_X_RIGHT 300
 #define START_Y 100 // FFT_H
 #define LINE_HT 40
 #define CALLSIGN_SIZE 10
-
-
 
 void autoseq_init(const char *myCall, const char *myGrid);
 

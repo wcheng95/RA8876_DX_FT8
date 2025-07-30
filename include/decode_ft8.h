@@ -8,8 +8,6 @@
 #ifndef DECODE_FT8_H_
 #define DECODE_FT8_H_
 
-
-
 int ft8_decode(void);
 
 enum Sequence
@@ -30,28 +28,14 @@ struct Decode
     int received_snr;
     char target_locator[7];
     int slot;
-    int RR73;
     Sequence sequence;
 };
 
 struct display_message_details
 {
-    char message[40];
+    char message[22];
     int text_color;
 };
-
-/*
-struct Calling_Station
-{
-    int number_times_called;
-    char call[14];
-    char locator[7];
-    int RSL;
-    int received_RSL;
-    int RR73;
-    Sequence sequence;
-};
-*/
 
 
 typedef enum _MsgColor

@@ -45,7 +45,7 @@ display_message_details display[10];
 
 Decode new_decoded[20];
 
-static const char *blank = "                     "; // 21 spaces
+static const char *blank = "                  "; // 18 spaces
 static char worked_qso_entries[MAX_QSO_ENTRIES][MAX_LINE_LEN] = {};
 static int num_qsos = 0;
 
@@ -147,41 +147,29 @@ int ft8_decode(void)
         new_decoded[num_decoded].slot = slot_state;
 
         raw_RSL = (float)cand.score;
-        //display_RSL = (int)((raw_RSL - 160)) / 6;
         display_RSL = (int)((raw_RSL - 248)) / 8;
         new_decoded[num_decoded].snr = display_RSL;
 
-        char Test_Locator[] = "    ";
-        char FT8_Message[] = "    ";
+        new_decoded[num_decoded].sequence = Seq_RSL;
 
-        strcpy(Test_Locator, new_decoded[num_decoded].locator);
-
-        if (validate_locator(Test_Locator) == 1)
+        if (validate_locator(locator) == 1)
         {
-          strcpy(new_decoded[num_decoded].target_locator, Test_Locator);
+          strcpy(new_decoded[num_decoded].target_locator, locator);
           new_decoded[num_decoded].sequence = Seq_Locator;
-        }
-
-        strcpy(FT8_Message, new_decoded[num_decoded].locator);
-
-        if (strindex(FT8_Message, "73") >= 0 || strindex(FT8_Message, "RR73") >= 0 || strindex(FT8_Message, "RRR") >= 0)
-        {
-          new_decoded[num_decoded].RR73 = 1;
         }
         else
         {
-          if (FT8_Message[0] == 82)
-          {
-            FT8_Message[0] = 32;
-            new_decoded[num_decoded].RR73 = 2; // chh_traffuc
-            new_decoded[num_decoded].sequence = Seq_Locator;
-          }
+         					const char *ptr = locator;
+					if (*ptr == 'R')
+					{
+						ptr++;
+					}
 
-          received_RSL = atoi(FT8_Message);
-          if (received_RSL < 30) // Prevents an 73 being decoded as a received RSL
-          {
-            new_decoded[num_decoded].received_snr = received_RSL;
-          }
+					received_RSL = atoi(ptr);
+					if (received_RSL < 30) // Prevents an 73 being decoded as a received RSL
+					{
+						new_decoded[num_decoded].received_snr = received_RSL;
+					}
         }
 
         ++num_decoded;
@@ -204,19 +192,19 @@ int validate_locator(const char *QSO_locator)
   N1 = QSO_locator[2] - 48;
   N2 = QSO_locator[3] - 48;
 
-  if (A1 >= 0 && A1 <= 17)
-    test++;
-  if (A2 > 0 && A2 < 17)
-    test++; // block RR73 Artic and Anartica
+	if (A1 <= 17) // 'R'
+		test++;
+	if (A2 > 0 && A2 < 17)
+		test++; // block RR73 Arctic and Antarctica
+	if (N1 <= 9)
+		test++;
+	if (N2 <= 9)
+		test++;
 
-  if (N1 >= 0 && N1 <= 9)
-    test++;
-  if (N2 >= 0 && N2 <= 9)
-    test++;
-
-  if (test == 4)
-    return 1;
-  return 0;
+	if (test == 4)
+		return 1;
+	else
+		return 0;
 }
 
 int strindex(const char *s, const char *t)
@@ -235,7 +223,7 @@ int strindex(const char *s, const char *t)
   return result;
 }
 
-
+/*
 void clear_decoded_messages(void)
 {
   const char call_blank[] = "       ";
@@ -251,11 +239,10 @@ void clear_decoded_messages(void)
     new_decoded[i].sync_score = 0;
     new_decoded[i].received_snr = 99;
     new_decoded[i].slot = 0;
-    new_decoded[i].RR73 = 0;
     new_decoded[i].sequence = Seq_RSL;
   }
 }
- 
+ */
 
 void set_QSO_Xmit_Freq(int freq)
 {
@@ -274,7 +261,6 @@ void process_selected_Station(int stations_decoded, int TouchIndex)
     strcpy(Target_Call, new_decoded[TouchIndex].call_from);
     strcpy(Target_Locator, new_decoded[TouchIndex].target_locator);
     Target_RSL = new_decoded[TouchIndex].snr;
-   // target_slot = new_decoded[TouchIndex].slot;
     target_slot = new_decoded[TouchIndex].slot ^ 1;
     target_freq = new_decoded[TouchIndex].freq_hz;
 
@@ -298,10 +284,10 @@ void display_messages(Decode new_decoded[], int decoded_messages)
 		const char *call_from = new_decoded[i].call_from;
 		const char *locator = new_decoded[i].locator;
 
-        char message[MAX_MSG_LEN];
-		snprintf(message, MAX_LINE_LEN, "%s %s %s %2i", call_to, call_from, locator, new_decoded[i].snr);
-        message[MAX_LINE_LEN] = '\0'; // Make sure it fits the display region
-        MsgColor color = White;
+    char message[MAX_MSG_LEN];
+    snprintf(message, MAX_LINE_LEN, "%s %s %s", call_to, call_from, locator);
+    message[MAX_LINE_LEN] = '\0'; // Make sure it fits the display region
+    MsgColor color = White;
 		if (strcmp(call_to, "CQ") == 0 || strncmp(call_to, "CQ ", 3) == 0)
 		{
 			color = Green;
@@ -315,7 +301,7 @@ void display_messages(Decode new_decoded[], int decoded_messages)
 		if (was_txing) {
 			color = Yellow;
 		}
-        display_line(false, i, Black, color, message);
+    display_line(false, i, Black, color, message);
 	}
 }
 
