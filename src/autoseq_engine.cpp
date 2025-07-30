@@ -187,10 +187,17 @@ void autoseq_get_qso_state(char out_text[MAX_LINE_LEN])
     };
 
     snprintf(out_text, MAX_LINE_LEN,
+        " %.4s tried:%1u",
+        states[ctx.state],
+        ctx.retry_counter
+
+        /*
         "%-8.8s %.4s tried:%1u",
         ctx.dxcall,
         states[ctx.state],
         ctx.retry_counter
+        */
+
     );
 }
 
@@ -544,8 +551,10 @@ static void write_worked_qso()
     };
     char *buf = add_worked_qso();
     // band, HH:MM, callsign, SNR
-    int printed = snprintf(buf, MAX_LINE_LEN, "%.4s %.3s %.12s",
-        log_rtc_time_string,
+   // int printed = snprintf(buf, MAX_LINE_LEN, "%.4s %.3s %.12s",
+   //     log_rtc_time_string,
+
+    int printed = snprintf(buf, MAX_LINE_LEN, "%.3s %.12s",
         band_strs[BandIndex],
         ctx.dxcall
     );

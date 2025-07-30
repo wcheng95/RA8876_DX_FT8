@@ -15,5 +15,6 @@ void update_message_log_display(int mode);
 void clear_log_messages(void);
 void Be_Patient(void);
 void display_revision_level(void);
+void display_logged_messages(void);
 
 extern char current_message[];

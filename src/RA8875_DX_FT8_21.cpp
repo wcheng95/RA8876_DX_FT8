@@ -47,6 +47,7 @@ int was_txing = 0;
 bool clr_pressed = false;
 bool free_text = false;
 bool tx_pressed = false;
+int  log_display_flag;
 
 // Autoseq TX text buffer
 static char autoseq_txbuf[MAX_MSG_LEN];
@@ -178,6 +179,10 @@ void tx_display_update(void)
 		display_queued_message(autoseq_txbuf);
 	}
 
+	autoseq_get_qso_state(autoseq_state_str);
+	display_qso_state(autoseq_state_str);
+
+
 }
 
 void setup(void)
@@ -302,17 +307,17 @@ void loop()
      
     display_messages(new_decoded, master_decoded);
 
+      
       for (int i = 0; i < master_decoded; ++i) {
-
         if  ( strindex(new_decoded[i].call_to, Station_Call) >= 0    ) {
-
-        char received_message[40];
+        char received_message[22];
         sprintf(received_message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
         strcpy(current_message, received_message);
         update_message_log_display(0);
         }
-
       }
+      
+      
 
     if (!was_txing) {
 				for (int i = 0; i < master_decoded; i++)
@@ -381,6 +386,7 @@ if (clr_pressed) {
 			tx_display_update();
 		}
     
+      if(log_display_flag ==1) display_logged_messages();
 
 		if (!Tune_On && FT8_Touch_Flag && FT_8_TouchIndex < master_decoded) {
 			process_selected_Station(master_decoded, FT_8_TouchIndex);
@@ -462,11 +468,15 @@ static void update_synchronization(void)
 		was_txing = 1;
 		// Partial TX, set the TX counter based on current ft8_time
 		ft8_xmit_counter = (ft8_time % 15000) / 160; // 160ms per symbol
+    
+    
 		// Log the TX
     if  ( strindex(autoseq_txbuf, "CQ") < 0) {
     strcpy(current_message, autoseq_txbuf);
     update_message_log_display(1);
     }
+    
+    
     
 		tx_display_update();
 	}
