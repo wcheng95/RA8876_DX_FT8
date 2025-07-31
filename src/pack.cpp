@@ -9,16 +9,13 @@
 #include <string.h>
 #include <stdio.h>
 
-
 #include "pack.h"
 #include "text.h"
-
 
 static const char A0[43] = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ+-./?";
 static const char A1[38] = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const char A3[11] = "0123456789";
 static const char A4[28] = " ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
 
 static const char DE_[3] = {'D', 'E', ' '};
 static const char QRZ_[4] = {'Q', 'R', 'Z', ' '};
@@ -27,7 +24,6 @@ static const char RRR[4] = "RRR";
 static const char RR73[5] = "RR73";
 static const char _73[3] = "73";
 static const char SlashP[2] = {'/', 'P'};
-
 static const size_t ERROR_FLAG = 0xffffffff;
 
 // Pack a special token, a 22-bit hash code, or a valid base call
@@ -44,7 +40,6 @@ int32_t pack28s(const char *callsign, int *has_suffix)
     int32_t NTOKENS = 2063592L;
     int32_t MAX22 = 4194304L;
 
-
     if (memcmp(callsign, CQ_, sizeof(CQ_)) == 0)
         return 2;
     if (memcmp(callsign, DE_, sizeof(DE_)) == 0)
@@ -54,16 +49,13 @@ int32_t pack28s(const char *callsign, int *has_suffix)
 
     char c6[6] = {' ', ' ', ' ', ' ', ' ', ' '};
 
-
     int length = 0;
     while (callsign[length] != ' ' && callsign[length] != 0)
     {
         length++;
     }
 
-
     if (length > 3 && memcmp(callsign + length - 2, SlashP, sizeof(SlashP)) == 0)
-
     {
         if (has_suffix != NULL)
             *has_suffix = 1;

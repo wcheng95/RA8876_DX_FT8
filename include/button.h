@@ -70,19 +70,16 @@ void display_Free_Text(void);
 void sync_FT8(void);
 int testButton(uint8_t index);
 
-extern int logging_on;
 extern int QSO_xmit;
 extern int Beacon_State;
 extern int Beacon_On;
 extern uint8_t RX_volume;
 extern int RF_Gain;
 extern uint16_t display_cursor_line;
-extern int CQ_Flag;
 extern int Auto_Sync;
 extern struct ButtonStruct sButtonData[];
 extern int FT_8_TouchIndex;
 extern int FT8_Message_Touch;
-extern int FT_8_MessageIndex;
 extern int Map_Index;
 extern uint16_t start_freq;
 extern int Band_Minimum;
@@ -90,7 +87,6 @@ extern struct FreqStruct sBand_Data[];
 extern int BandIndex;
 extern int Free_Index;
 extern int CQ_Mode_Index;
-extern int Target_Flag;
 extern int QSO_Fix;
 extern int FT8_Touch_Flag;
 

@@ -33,16 +33,15 @@
 
 #define USB 2
 
+const int button_delay = 5;
+
 uint16_t draw_x, draw_y, touch_x, touch_y;
-int test;
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 #define ft8_shift 6.25
 
 uint16_t display_cursor_line;
-int button_delay = 5;
-int start_up_offset_freq;
 
 uint8_t RX_volume;
 int RF_Gain;
@@ -50,11 +49,8 @@ int RF_Gain;
 int FT8_Touch_Flag;
 int FT8_Message_Touch;
 int FT_8_TouchIndex;
-int FT_8_MessageIndex;
 
-int CQ_Flag;
 int Beacon_State;
-int Target_Flag;
 int Beacon_On;
 int Auto_Sync;
 
@@ -71,11 +67,6 @@ int CQ_Mode_Index;
 int Free_Index;
 
 int Map_Index;
-
-extern bool clr_pressed;
-extern bool free_text;
-extern bool tx_pressed;
-int Skip_Tx1;
 
 #define numButtons 23
 #define button_height 100
@@ -425,12 +416,12 @@ void drawButton(uint16_t i)
   if (sButtonData[i].Active > 0)
   {
 
-    if (sButtonData[i].state == 1)
+    if (sButtonData[i].state)
       tft.textColor(WHITE, RED);
     else
       tft.textColor(WHITE, BLUE);
 
-    if (sButtonData[i].state == 1)
+    if (sButtonData[i].state)
     {
       tft.setCursor(sButtonData[i].x + 7, sButtonData[i].y + 20);
       tft.write(sButtonData[i].text1, 4);
@@ -463,7 +454,7 @@ void checkButton(void)
   uint16_t i;
   for (i = 0; i < numButtons; i++)
   {
-    if (testButton(i) == 1)
+    if (testButton(i))
     {
       switch (sButtonData[i].Active)
       {
@@ -497,7 +488,6 @@ void executeButton(uint16_t index)
     drawButton(0);
     delay(40);
 
-    /*
     clear_xmit_messages();
     terminate_QSO();
     Auto_QSO_State = 0;
@@ -505,10 +495,8 @@ void executeButton(uint16_t index)
     clear_reply_message_box();
     clear_log_stored_data();
     clear_log_messages();
-    erase_CQ();
-    */
 
-    clr_pressed = true;
+    erase_CQ();
     sButtonData[0].state = 0;
     drawButton(0);
 
@@ -519,20 +507,16 @@ void executeButton(uint16_t index)
     {
       Beacon_On = 0;
       Beacon_State = 0;
-      /*
       clear_reply_message_box();
       clear_log_messages();
       clear_log_stored_data();
-      */
     }
     else
     {
       Beacon_On = 1;
-      /*
       clear_reply_message_box();
       clear_log_stored_data();
-      clear_log_messages();*/
-
+      clear_log_messages();
       Beacon_State = 1;
     }
 
@@ -542,11 +526,11 @@ void executeButton(uint16_t index)
   case 2:
     if (!sButtonData[2].state)
     {
-      //tune_Off_sequence();
+      tune_Off_sequence();
       Tune_On = 0;
-      //Arm_Tune = 0;
-      //xmit_flag = 0;
-      //receive_sequence();
+      Arm_Tune = 0;
+      xmit_flag = 0;
+      receive_sequence();
       erase_Cal_Display();
       delay(5);
     }
@@ -554,7 +538,7 @@ void executeButton(uint16_t index)
     {
       Tune_On = 1; // Turns off display of FT8 traffic
       setup_Cal_Display();
-      //Arm_Tune = 0;
+      Arm_Tune = 0;
     }
     break;
 
@@ -571,7 +555,7 @@ void executeButton(uint16_t index)
 
   case 5:
     delay(10);
-    if (sButtonData[5].state == 1)
+    if (sButtonData[5].state)
       QSO_Fix = 1;
     else
       QSO_Fix = 0;
@@ -584,7 +568,7 @@ void executeButton(uint16_t index)
     else
     {
       Auto_Sync = 1;
-      //Be_Patient();
+      Be_Patient();
     }
     break;
 
@@ -706,7 +690,7 @@ void executeCalibrationButton(uint16_t index)
       Options_StoreValue(1);
       Map_Index = Options_GetValue(1);
     }
-    
+
     sButtonData[16].state = 1;
     drawButton(16);
     delay(10);
@@ -722,7 +706,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[StandardCQ].state = 1;
       drawButton(StandardCQ);
     }
-
     break;
 
   case CQSOTA:
@@ -733,7 +716,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[CQSOTA].state = 1;
       drawButton(CQSOTA);
     }
-
     break;
 
   case CQPOTA:
@@ -744,7 +726,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[CQPOTA].state = 1;
       drawButton(CQPOTA);
     }
-
     break;
 
   case QRPP:
@@ -755,7 +736,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[QRPP].state = 1;
       drawButton(QRPP);
     }
-
     break;
 
   case 21:
@@ -774,7 +754,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[FreeText1].state = 0;
       drawButton(FreeText1);
     }
-
     break;
 
   case FreeText2:
@@ -793,7 +772,6 @@ void executeCalibrationButton(uint16_t index)
       sButtonData[FreeText2].state = 0;
       drawButton(FreeText2);
     }
-
     break;
   }
 }
@@ -902,7 +880,6 @@ int testButton(uint8_t index)
 {
   if ((draw_x > sButtonData[index].x) && (draw_x < sButtonData[index].x + sButtonData[index].w) && (draw_y > sButtonData[index].y) && (draw_y <= sButtonData[index].y + sButtonData[index].h))
   {
-
     return 1;
   }
   else
@@ -926,17 +903,7 @@ int FT8_Touch(void)
 
 int Xmit_message_Touch(void)
 {
-  int y_test;
-  if ((draw_x > 400 && draw_x < 640) && (draw_y > 380 && draw_y < 550))
-  {
-    y_test = draw_y - 380;
-
-    FT_8_MessageIndex = y_test / 40;
-
-    return 1;
-  }
-  else
-    return 0;
+  return ((draw_x > 400 && draw_x < 640) && (draw_y > 380 && draw_y < 550));
 }
 
 void check_WF_Touch(void)
@@ -959,11 +926,12 @@ void set_startup_freq(void)
 }
 
 #define MAXTOUCHLIMIT 10
-int touch_count;
 
 void process_touch(void)
 {
-  if (touch_count <= MAXTOUCHLIMIT)
+  static int touch_count = 0;
+
+  if (touch_count < MAXTOUCHLIMIT)
   {
     if (tft.touched())
     { // if touched(true) detach isr
@@ -987,7 +955,7 @@ void process_touch(void)
     }
   }
 
-  if (touch_count >= 10)
+  if (touch_count >= MAXTOUCHLIMIT)
   {
     checkButton();
     FT8_Touch_Flag = FT8_Touch();
@@ -999,25 +967,25 @@ void process_touch(void)
 
 void setup_Cal_Display(void)
 {
+  syncTime = true;
   clear_reply_message_box();
   tft.fillRect(0, 100, 600, 439, BLACK);
   erase_CQ();
 
-  sButtonData[11].Active = 3;
-  sButtonData[12].Active = 3;
-  sButtonData[13].Active = 3;
-  sButtonData[14].Active = 1;
-  sButtonData[15].Active = 3;
-  sButtonData[16].Active = 3;
-  sButtonData[17].Active = 3;
-  sButtonData[18].Active = 3;
-  sButtonData[19].Active = 3;
-  sButtonData[20].Active = 3;
-  sButtonData[21].Active = 3;
-  sButtonData[22].Active = 3;
+  for (int id = 11; id < 14; id++)
+  {
+    drawButton(id);
+    sButtonData[id].Active = 3;
+  }
 
-  for (int i = 11; i < 23; i++)
-    drawButton(i);
+  sButtonData[14].Active = 1;
+  drawButton(14);
+
+  for (int id = 15; id < 23; id++)
+  {
+    sButtonData[id].Active = 3;
+    drawButton(id);
+  }
 
   show_wide(90, 140, start_freq); // 790 - 700 = 90
 
@@ -1046,7 +1014,6 @@ void reset_buttons(int btn1, int btn2, int btn3, const char *button_text)
   drawButton(btn3);
   sButtonData[4].text0 = (char *)button_text;
   drawButton(4);
-
 }
 
 void update_CQFree_button()

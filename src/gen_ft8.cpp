@@ -67,17 +67,17 @@ void compose_messages(void)
   itoa(in_range(Target_RSL, -999, 9999), RSL, 10);
 
   strcpy(xmit_messages[0], blank);
-  sprintf(xmit_messages[0], "%s %s %s", Target_Call, Station_Call, Locator);
+  sprintf(xmit_messages[0], "%s %s %s", Target_Call, Station_Call, Station_Locator);
   strcpy(xmit_messages[1], blank);
   sprintf(xmit_messages[1], "%s %s R%s", Target_Call, Station_Call, RSL);
   strcpy(xmit_messages[2], blank);
   sprintf(xmit_messages[2], "%s %s %s", Target_Call, Station_Call, seventy_three);
 
-  tft.fillRect(left_hand_message, 500, 240, 18, BLACK);
+  tft.fillRect(left_hand_message, 520, 240, 20, BLACK);
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
 
-  tft.setCursor(left_hand_message, 500);
+  tft.setCursor(left_hand_message, 520);
   tft.write(xmit_messages[0], 18);
 }
 
@@ -91,8 +91,8 @@ void que_message(int index)
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
 
-  tft.setCursor(left_hand_message, 500);
-  tft.write(xmit_messages[index], 18);
+  tft.setCursor(left_hand_message, 520);
+  tft.write(xmit_messages[index], 19);
 
   strcpy(current_message, xmit_messages[index]);
 
@@ -144,13 +144,13 @@ void set_reply(ReplyID replyId)
 
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
-  tft.setCursor(left_hand_message, 500);
+  tft.setCursor(left_hand_message, 520);
   tft.write(reply_message, 18);
 }
 
 void clear_reply_message_box(void)
 {
-  tft.fillRect(left_hand_message, 100, 290, 430, BLACK);
+  tft.fillRect(left_hand_message, 100, 290, 420, BLACK);
 }
 
 char Free_Text1[] = "FreeText 1   ";
@@ -159,10 +159,7 @@ char Free_Text2[] = "FreeText 2   ";
 void set_cq(void)
 {
   const char CQ[] = "CQ";
-
-  char CQ_message[] = "                  ";
-
-
+  char CQ_message[20] = "                   ";
   uint8_t packed[K_BYTES];
 
   if (Free_Index == 0)
@@ -183,11 +180,11 @@ void set_cq(void)
 
     if (mode == NULL)
     {
-      sprintf(CQ_message, "%s %s %s", CQ, Station_Call, Locator);
+      sprintf(CQ_message, "%s %s %s", CQ, Station_Call, Station_Locator);
     }
     else
     {
-      sprintf(CQ_message, "%s %s %s %s", CQ, mode, Station_Call, Locator);
+      sprintf(CQ_message, "%s %s %s %s", CQ, mode, Station_Call, Station_Locator);
     }
   }
   else
@@ -210,16 +207,16 @@ void set_cq(void)
 
   tft.setFontSize(2, true);
   tft.textColor(WHITE, BLACK);
-  tft.setCursor(left_hand_message, 500);
+  tft.setCursor(left_hand_message, 520);
   tft.write(CQ_message, 18);
 }
 
 void erase_CQ(void)
 {
-  char CQ_message[] = "                   ";
+  char CQ_message[] = "                  ";
   tft.setFontSize(2, true);
   tft.textColor(BLACK, BLACK);
-  tft.setCursor(left_hand_message, 500);
+  tft.setCursor(left_hand_message, 520);
   tft.write(CQ_message, 18);
 }
 
@@ -228,16 +225,6 @@ void clear_xmit_messages(void)
   char xmit_message[] = "                  ";
 
   tft.setFontSize(2, true);
-  tft.setCursor(left_hand_message, 500);
+  tft.setCursor(left_hand_message, 520);
   tft.write(xmit_message, 18);
-}
-
-
-// Needed by autoseq_engine
-void queue_custom_text(const char *tx_msg)
-{
-	uint8_t packed[K_BYTES];
-
-	pack77(tx_msg, packed);
-	genft8(packed, tones);
 }

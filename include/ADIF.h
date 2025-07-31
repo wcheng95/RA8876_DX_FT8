@@ -23,16 +23,10 @@ void Init_Log_File(void);
 
 void set_Station_Coordinates(char station[]);
 
-void make_time(void);
-void make_date(void);
-
 extern int16_t map_width;
 extern int16_t map_heigth;
 extern int16_t map_center_x;
 extern int16_t map_center_y;
 extern char file_name_string[24];
-
-extern char log_rtc_date_string[9];
-extern char log_rtc_time_string[9];
 
 #endif /* ADIF_H_ */

@@ -17,13 +17,18 @@ static int unpack28(uint32_t n28, uint8_t ip, uint8_t i3, char *result)
   {
     if (n28 <= 2)
     {
-      if (n28 == 0)
+      switch(n28)
+      {
+      case 0:
         strcpy(result, "DE");
-      else if (n28 == 1)
+        return 0; // Success
+      case 1:
         strcpy(result, "QRZ");
-      else if (n28 == 2)
+        return 0; // Success
+      case 2:
         strcpy(result, "CQ");
-      return 0; // Success
+        return 0; // Success
+      }
     }
     if (n28 <= 1002)
     {
@@ -302,17 +307,23 @@ static int unpack_nonstandard(const uint8_t *a77, char *field1, char *field2,
   if (icq == 0)
   {
     strcpy(field1, trim(call_1));
-    if (nrpt == 1)
-      strcpy(field3, "RRR");
-    else if (nrpt == 2)
-      strcpy(field3, "RR73");
-    else if (nrpt == 3)
-      strcpy(field3, "73");
-    else if (nrpt == 4)
-      strcpy(field3, "RR");
-    else
+    switch(nrpt)
     {
+    case 0:
+      strcpy(field3, "RRR");
+      break;      
+    case 1:
+      strcpy(field3, "RR73");     
+      break;
+    case 2: 
+      strcpy(field3, "73");
+      break;    
+    case 3: 
+      strcpy(field3, "RR");
+      break;
+    default:  
       field3[0] = 0;
+      break;
     }
   }
   else
@@ -328,11 +339,9 @@ static int unpack_nonstandard(const uint8_t *a77, char *field1, char *field2,
 int unpack77_fields(const uint8_t *a77, char *field1, char *field2,
                     char *field3)
 {
-  uint8_t n3, i3;
-
   // Extract n3 (bits 71..73) and i3 (bits 74..76)
-  n3 = ((a77[8] << 2) & 0x04) | ((a77[9] >> 6) & 0x03);
-  i3 = (a77[9] >> 3) & 0x07;
+  uint8_t n3 = ((a77[8] << 2) & 0x04) | ((a77[9] >> 6) & 0x03);
+  uint8_t i3 = (a77[9] >> 3) & 0x07;
 
   field1[0] = field2[0] = field3[0] = 0;
 
