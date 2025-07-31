@@ -259,3 +259,25 @@ int nchar(char c, int table_idx)
     // Character not found
     return -1;
 }
+
+int extra_arg_len(const char *arg_in, char *arg_out, size_t arg_out_size)
+{
+    size_t len = 0;
+    if (!arg_in || !arg_out || arg_out_size == 0)
+        return 0;
+
+    while (*arg_in && len < arg_out_size - 1)
+    {
+        arg_out[len] = *arg_in;
+        len++;
+        arg_in++;
+    }
+    arg_out[len] = 0;
+
+    if (*arg_in != 0)
+    {
+        return -1;
+    }
+
+    return len;
+}

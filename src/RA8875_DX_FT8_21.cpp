@@ -2,7 +2,6 @@
 
 #include <SPI.h>
 #include <TimeLib.h>
-#include <TinyGPS.h>
 #include <Audio.h>
 #include <Wire.h>
 #include <SPI.h>
@@ -29,8 +28,7 @@
 #include "ADIF.h"
 #include "AudioSDRpreProcessor.h"
 #include "main.h"
-#include "autoseq_engine.h"
-#include "ADIF.h"
+#include "Geodesy.h"
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
@@ -41,25 +39,8 @@
 
 #define MAXTOUCHLIMIT 1
 
-
-// Used for skipping the TX slot
-int was_txing = 0;
-bool clr_pressed = false;
-bool free_text = false;
-bool tx_pressed = false;
-
-// Autoseq TX text buffer
-static char autoseq_txbuf[MAX_MSG_LEN];
-// Autoseq current QSO state text
-static char autoseq_state_str[MAX_LINE_LEN];
-
-static bool worked_qsos_in_display = false;
-
-
 RA8876_t3 tft = RA8876_t3(RA8876_CS, RA8876_RESET);
 Si5351 si5351;
-
-TinyGPS gps;
 
 AudioSDRpreProcessor preProcessor;
 AudioInputI2S i2s1;            // xy=120,212
@@ -72,7 +53,7 @@ AudioMixer4 mixer1;            // xy=666,173
 AudioMixer4 mixer2;            // xy=675,406
 AudioAmplifier amp1;           // xy=859,151
 AudioOutputI2S i2s2;           // xy=868,258
-AudioRecordQueue queue1;       // xy=1027,149
+AudioRecordQueue audioQueue;   // xy=1027,149
 
 AudioAmplifier left_amp;
 AudioAmplifier right_amp;
@@ -98,7 +79,7 @@ AudioConnection patchCord9(fir2, 0, mixer1, 1);
 AudioConnection patchCord10(fir2, 0, mixer2, 1);
 
 AudioConnection c3(mixer2, 0, amp1, 0);
-AudioConnection patchCord13(amp1, queue1);
+AudioConnection patchCord13(amp1, audioQueue);
 
 AudioConnection c4(mixer1, 0, left_amp, 0);
 AudioConnection c5(mixer2, 0, right_amp, 0);
@@ -108,19 +89,16 @@ AudioConnection c7(right_amp, 0, i2s2, 1);
 
 AudioControlSGTL5000 sgtl5000; // xy=404,516
 
-q15_t __attribute__((aligned(4))) dsp_buffer[3 * input_gulp_size];
+q15_t __attribute__((aligned(4))) dsp_buffer[FFT_BASE_SIZE * 3];
 q15_t __attribute__((aligned(4))) dsp_output[FFT_SIZE * 2];
-q15_t __attribute__((aligned(4))) input_gulp[input_gulp_size * 5];
+q15_t __attribute__((aligned(4))) input_gulp[FFT_BASE_SIZE * 5];
 
-char Station_Call[11]; // six character call sign + /0
-char Locator[11];      // four character locator  + /0
+char Station_Call[11];   // six character call sign + /0
+char Station_Locator[7]; // four character locator  + /0
 
 uint16_t currentFrequency;
 
-uint32_t current_time, start_time, ft8_time;
-uint32_t days_fraction, hours_fraction, minute_fraction;
-
-uint8_t ft8_hours, ft8_minutes, ft8_seconds;
+uint32_t current_time, start_time;
 int ft8_flag;
 int FT_8_counter;
 int ft8_marker;
@@ -136,59 +114,57 @@ uint16_t cursor_line;
 int Tune_On;
 
 float xmit_level = 0.8;
-int logging_on;
-
-int auto_location;
-float flat, flon;
-int32_t gps_latitude;
-int32_t gps_longitude;
-int8_t gps_hour;
-int8_t gps_minute;
-int8_t gps_second;
-int8_t gps_hundred;
-int8_t gps_offset = 2;
-
-int SD_Year;
-byte SD_Month, SD_Day, SD_Hour, SD_Minute, SD_Second, SD_Flag;
-
-long et1 = 0, et2 = 0;
 
 int QSO_xmit;
-int Xmit_DSP_counter;
 int slot_state = 0;
 int target_slot;
-int target_freq;
+
+bool syncTime = true;
+
+struct RTC_Time
+{
+  uint8_t seconds; // 00-59 in BCD
+  uint8_t minutes; // 00-59 in BCD
+  uint8_t hours;   // 00-23 in BCD
+  uint8_t dayOfWeek;
+  uint8_t day;
+  uint8_t month;
+  uint8_t year;
+};
+
+enum I2COperation
+{
+  OP_TIME_REQUEST = 0,
+  OP_SENDER_RECORD,
+  OP_RECEIVER_RECORD,
+  OP_SEND_REQUEST
+};
+
+static const uint8_t ESP32_I2C_ADDRESS = 0x2A;
 
 static void process_data();
-static void parse_NEMA(void);
 static void update_synchronization();
-static void copy_to_fft_buffer(void *destination, const void *source);
-
-void tx_display_update(void);
-
-// Helper function for updating TX region display
-void tx_display_update(void)
-{
-	if (Tune_On || worked_qsos_in_display) {
-		return;
-	}
-	if (xmit_flag) {
-		display_txing_message(autoseq_txbuf);
-	} else {
-		display_queued_message(autoseq_txbuf);
-	}
-
-}
+static void get_time();
 
 void setup(void)
 {
+  Serial.begin(9600);
 
- // Serial1.begin(9600);
+  if (CrashReport)
+  {
+    Serial.print(CrashReport);
+  }
+
+  init_RxSw_TxSw();
 
   setSyncProvider(getTeensy3Time);
 
+  Serial.println("hello charley");
+
   delay(10);
 
+  Wire.begin();
+  Wire1.begin();
   pinMode(BACKLITE, OUTPUT);
   digitalWrite(BACKLITE, HIGH);
 
@@ -204,11 +180,9 @@ void setup(void)
   Options_Initialize();
 
   start_Si5351();
-
   init_DSP();
-  initalize_constants();
-
   set_startup_freq();
+  get_time();
 
   AudioMemory(100);
   preProcessor.startAutoI2SerrorDetection();
@@ -241,13 +215,13 @@ void setup(void)
   left_amp.gain(0.2);
   right_amp.gain(0.2);
 
-  queue1.begin();
+  audioQueue.begin();
 
   start_time = millis();
 
   open_stationData_file();
 
-  set_Station_Coordinates(Locator);
+  set_Station_Coordinates(Station_Locator);
 
   display_all_buttons();
   display_date(650, 30);
@@ -259,22 +233,21 @@ void setup(void)
 
   Init_Log_File();
   draw_map(Map_Index);
-
-  autoseq_init(Station_Call, Locator);
 }
 
 void loop()
 {
-  if (decode_flag == 0)
+  const int offset_index = 8;
+  if (!decode_flag)
     process_data();
 
-  if (DSP_Flag == 1)
+  if (DSP_Flag)
   {
     process_FT8_FFT();
 
-    if (xmit_flag == 1)
+    if (xmit_flag)
     {
-      if (Tune_On == 0)
+      if (!Tune_On)
       {
         if (ft8_xmit_counter >= offset_index && ft8_xmit_counter < 79 + offset_index)
         {
@@ -282,6 +255,7 @@ void loop()
         }
 
         ft8_xmit_counter++;
+
         if (ft8_xmit_counter == 80 + offset_index)
         {
           xmit_flag = 0;
@@ -295,108 +269,32 @@ void loop()
     DSP_Flag = 0;
   }
 
-  if (decode_flag == 1 && Tune_On == 0 && xmit_flag == 0)
+  if (decode_flag && !Tune_On && !xmit_flag)
   {
- 
+    // toggle the slot state
+    slot_state = (slot_state == 0) ? 1 : 0;
+    clear_decoded_messages();
+
     master_decoded = ft8_decode();
-     
-    display_messages(new_decoded, master_decoded);
+    if (master_decoded > 0)
 
-      for (int i = 0; i < master_decoded; ++i) {
-
-        if  ( strindex(new_decoded[i].call_to, Station_Call) >= 0    ) {
-
-        char received_message[40];
-        sprintf(received_message, "%s %s %s", new_decoded[i].call_to, new_decoded[i].call_from, new_decoded[i].locator);
-        strcpy(current_message, received_message);
-        update_message_log_display(0);
-        }
-
-      }
-
-    if (!was_txing) {
-				for (int i = 0; i < master_decoded; i++)
-				{
-					// TX is (potentially) necessary
-					if (autoseq_on_decode(&new_decoded[i]))
-					{
-						// Fetch TX msg
-						if (autoseq_get_next_tx(autoseq_txbuf))
-						{
-							queue_custom_text(autoseq_txbuf);
-							QSO_xmit = 1;
-							tx_display_update();
-							break;
-						}
-					}
-				}
-
-				// No valid response has received to advance auto sequencing.
-				// Check TX retry is needed?
-				// Yes => QSO_xmit = True;
-				// No  => check in beacon mode?
-				//       Yes => start_cq, QSO_xmit = True;
-				//       No  => QSO_xmit = False;
-				if (!QSO_xmit)
-				{
-					// Check if retry is necessary
-					if (autoseq_get_next_tx(autoseq_txbuf))
-					{
-						queue_custom_text(autoseq_txbuf);
-						QSO_xmit = 1;
-					}
-					else if (Beacon_On)
-					{
-						target_slot = slot_state ^ 1;
-						autoseq_start_cq();
-						autoseq_get_next_tx(autoseq_txbuf);
-						queue_custom_text(autoseq_txbuf);
-						QSO_xmit = 1;
-						tx_display_update();
-					}
-				}
-			}
+      display_messages(master_decoded);
+    if (Beacon_On)
+      service_Beacon_mode(master_decoded);
+    else
+      service_QSO_mode(master_decoded);
 
     decode_flag = 0;
   } // end of servicing FT_Decode
 
-  //if (Serial1.available())  parse_NEMA();
-
   process_touch();
 
-if (clr_pressed) {
-			terminate_QSO();
-			QSO_xmit = 0;
-			was_txing = 0;
-			autoseq_init(Station_Call, Locator);
-			autoseq_txbuf[0] = '\0';
-			tx_display_update();
-			clr_pressed = false;
-		}
-
-    
-		if (tx_pressed) {
-			worked_qsos_in_display = display_worked_qsos();
-			tx_pressed = false;
-			tx_display_update();
-		}
-    
-
-		if (!Tune_On && FT8_Touch_Flag && FT_8_TouchIndex < master_decoded) {
-			process_selected_Station(master_decoded, FT_8_TouchIndex);
-			autoseq_on_touch(&new_decoded[FT_8_TouchIndex]);
-			autoseq_get_next_tx(autoseq_txbuf);
-			queue_custom_text(autoseq_txbuf);
-			QSO_xmit = 1;
-			FT8_Touch_Flag = 0;
-			tx_display_update();
-		}
-    
+  if (!Tune_On && FT8_Touch_Flag && !Beacon_On)
+    process_selected_Station(master_decoded, FT_8_TouchIndex);
 
   update_synchronization();
+  get_time();
 }
-
-
 
 time_t getTeensy3Time()
 {
@@ -405,73 +303,55 @@ time_t getTeensy3Time()
 
 static void process_data()
 {
-  if (queue1.available() >= num_que_blocks)
+  if (audioQueue.available() >= num_que_blocks)
   {
     for (int i = 0; i < num_que_blocks; i++)
     {
-      copy_to_fft_buffer(input_gulp + block_size * i, queue1.readBuffer());
-      queue1.freeBuffer();
+      memcpy(input_gulp + block_size * i,
+             audioQueue.readBuffer(),
+             AUDIO_BLOCK_SAMPLES * sizeof(uint16_t));
+      audioQueue.freeBuffer();
     }
 
-    for (int i = 0; i < input_gulp_size; i++)
+    const size_t length = FFT_SIZE;
+    memmove(dsp_buffer,
+            dsp_buffer + FFT_BASE_SIZE,
+            length * sizeof(q15_t));
+    for (int i = 0; i < FFT_BASE_SIZE; i++)
     {
-      dsp_buffer[i] = dsp_buffer[i + input_gulp_size];
-      dsp_buffer[i + input_gulp_size] = dsp_buffer[i + 2 * input_gulp_size];
-      dsp_buffer[i + 2 * input_gulp_size] = input_gulp[i * 5]; // decimation by 5
+      dsp_buffer[length + i] = input_gulp[i * 5]; // decimation by 5
     }
 
     DSP_Flag = 1;
   }
 }
 
-static void copy_to_fft_buffer(void *destination, const void *source)
+void update_synchronization()
 {
-  memcpy(destination, source, AUDIO_BLOCK_SAMPLES * sizeof(uint16_t));
-}
-
-
-static void update_synchronization(void)
-{
-	uint32_t current_time = millis();;
-	ft8_time = current_time - start_time;
-
-	// Update slot and reset RX
-	int current_slot = ft8_time / 15000 % 2;
-	if (current_slot != slot_state)
-	{
-		// toggle the slot state
-
-		slot_state ^= 1;
-		if (was_txing) {
-			autoseq_tick();
-		}
-		was_txing = 0;
-
-		ft8_flag = 1;
-		FT_8_counter = 0;
-		ft8_marker = 1;
+  current_time = millis();
+  uint32_t ft8_time = current_time - start_time;
+  if (ft8_flag == 0 && ft8_time % 15000 <= 200)
+  {
+    ft8_flag = 1;
+    FT_8_counter = 0;
+    ft8_marker = 1;
     WF_counter = 0;
-	  tx_display_update();
-	}
 
-	// Check if TX is intended
-	if (QSO_xmit && target_slot == slot_state && FT_8_counter < 29)
-	{
-		setup_to_transmit_on_next_DSP_Flag(); // TODO: move to main.c
-		QSO_xmit = 0;
-		was_txing = 1;
-		// Partial TX, set the TX counter based on current ft8_time
-		ft8_xmit_counter = (ft8_time % 15000) / 160; // 160ms per symbol
-		// Log the TX
-    if  ( strindex(autoseq_txbuf, "CQ") < 0) {
-    strcpy(current_message, autoseq_txbuf);
-    update_message_log_display(1);
+    LatLong ll = QRAtoLatLong(Station_Locator);
+    if (ll.isValid)
+    {
+      show_decimal(680, 60, ll.latitude);
+      show_decimal(880, 60, ll.longitude);
     }
-    
-		tx_display_update();
-	}
-}
 
+    if (QSO_xmit == 1 && target_slot == slot_state)
+    {
+      setup_to_transmit_on_next_DSP_Flag();
+      update_message_log_display(1);
+      QSO_xmit = 0;
+    }
+  }
+}
 
 void sync_FT8(void)
 {
@@ -483,39 +363,129 @@ void sync_FT8(void)
   ft8_marker = 1;
   WF_counter = 0;
 }
-  
 
-void parse_NEMA(void)
+static void get_time()
 {
-  while (Serial1.available())
+  if (syncTime)
   {
-    if (gps.encode(Serial1.read()))
-    { // process gps messages
-      // when TinyGPS reports new data...
-      unsigned long age;
-      int Year;
-      byte Month, Day, Hour, Minute, Second, Hundred;
-      gps.crack_datetime(&Year, &Month, &Day, &Hour, &Minute, &Second, &Hundred, &age);
-      gps.f_get_position(&flat, &flon, &age);
+    Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+    uint8_t regVal = Wire1.endTransmission();
+    if (regVal == 0)
+    {
+      RTC_Time rtcTime;
+      memset(&rtcTime, 0, sizeof(rtcTime));
 
-      Second = Second + gps_offset;
-
-      setTime(Hour, Minute, Second, Day, Month, Year);
-      Teensy3Clock.set(now()); // set the RTC
-      gps_hour = Hour;
-      gps_minute = Minute;
-      gps_second = Second;
-      gps_hundred = Hundred;
-      const char *locator = get_mh(flat, flon, 4);
-
-      if (strindex(Locator, locator) < 0)
+      Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+      Wire1.write(OP_TIME_REQUEST);
+      Wire1.endTransmission();
+      Wire1.requestFrom(ESP32_I2C_ADDRESS, sizeof(RTC_Time));
+      uint8_t *ptr = (uint8_t *)&rtcTime;
+      size_t size = 0;
+      for (;;)
       {
-        for (int i = 0; i < 11; i++)
-          Locator[i] = locator[i];
-        set_Station_Coordinates(Locator);
-        display_station_data(820, 0);
+        if (Wire1.available())
+        {
+          ptr[size++] = Wire1.read();
+          if (size >= sizeof(RTC_Time))
+            break;
+        }
       }
+
+      if (rtcTime.year > 24 && rtcTime.year < 99 && size == sizeof(RTC_Time))
+      {
+        syncTime = false;
+
+        Serial.printf("%u %2.2u:%2.2u:%2.2u %2.2u/%2.2u/%2.2u (%u)\n",
+                      size,
+                      rtcTime.hours, rtcTime.minutes, rtcTime.seconds,
+                      rtcTime.day, rtcTime.month, rtcTime.year,
+                      rtcTime.dayOfWeek);
+        setTime(rtcTime.hours,
+                rtcTime.minutes,
+                rtcTime.seconds,
+                rtcTime.day,
+                rtcTime.month,
+                rtcTime.year + 2000);
+        Teensy3Clock.set(now()); // set the RTC
+      }
+    }
+    else
+    {
+      Serial.printf("Failed to read RTC time from ESP32 %u\n", regVal);
+      syncTime = false;
     }
   }
 }
 
+bool addSenderRecord(const char *callsign, const char *gridSquare, const char *software)
+{
+  bool result = false;
+  uint8_t buffer[32];
+  size_t callsignLength = strlen(callsign);
+  size_t gridSquareLength = strlen(gridSquare);
+  size_t softwareLength = strlen(software);
+
+  size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint8_t) + gridSquareLength + sizeof(uint8_t) + softwareLength;
+  if (bufferSize < sizeof(buffer))
+  {
+    uint8_t *ptr = buffer;
+    *ptr++ = (uint8_t)OP_SENDER_RECORD;
+    // Add callsign as length-delimited
+    *ptr++ = (uint8_t)callsignLength;
+    memcpy(ptr, callsign, callsignLength);
+    ptr += callsignLength;
+
+    // Add gridSquare as length-delimited
+    *ptr++ = (uint8_t)gridSquareLength;
+    memcpy(ptr, callsign, gridSquareLength);
+    ptr += gridSquareLength;
+
+    // Add software as length-delimited
+    *ptr++ = softwareLength;
+    memcpy(ptr, software, softwareLength);
+
+    Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+    Wire1.write(buffer, bufferSize);
+    uint8_t regVal = Wire1.endTransmission();
+    result = (regVal == 0);
+  }
+  return result;
+}
+
+bool addReceivedRecord(const char *callsign, uint32_t frequency, uint8_t snr)
+{
+  bool result = false;
+  uint8_t buffer[32];
+  size_t callsignLength = strlen(callsign);
+  size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint32_t) + sizeof(uint8_t);
+  if (bufferSize < sizeof(buffer))
+  {
+    uint8_t *ptr = buffer;
+    *ptr++ = (uint8_t)OP_RECEIVER_RECORD;
+    // Add callsign as length-delimited
+    *ptr++ = callsignLength;
+    memcpy(ptr, callsign, callsignLength);
+    ptr += callsignLength;
+
+    // Add frequency
+    memcpy(ptr, &frequency, sizeof(frequency));
+    ptr += sizeof(frequency);
+
+    // Add SNR (1 byte)
+    *ptr = snr;
+
+    Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+    Wire1.write(buffer, bufferSize);
+    uint8_t regVal = Wire1.endTransmission();
+    result = (regVal == 0);
+  }
+  return result;
+}
+
+bool sendRequest()
+{
+  Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+  Wire1.write(OP_SEND_REQUEST);
+  uint8_t regVal = Wire1.endTransmission();
+  return (regVal == 0);
+}

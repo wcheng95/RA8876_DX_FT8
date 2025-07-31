@@ -12,13 +12,12 @@
 #include "button.h"
 #include "main.h"
 #include "gen_ft8.h"
-#include "autoseq_engine.h"
 
 File stationData_File;
 
 int max_log_messages = 10;
 display_message_details log_messages[10];
-char current_message[22];
+char current_message[40];
 
 int old_rtc_hour;
 
@@ -35,8 +34,8 @@ void display_value(int x, int y, int value)
 
 void show_wide(uint16_t x, uint16_t y, int variable)
 {
-  uint8_t string[7];
-  sprintf((char *)string, "%6i", variable);
+  char string[7];
+  sprintf(string, "%6i", variable);
   tft.textColor(YELLOW, BLACK);
   tft.setCursor(x, y);
   tft.setFontSize(2, true);
@@ -47,7 +46,7 @@ void display_time(int x, int y)
 {
   getTeensy3Time();
   char string[10];
-  sprintf(string, "%2i:%2i:%2i", hour(), minute(), second());
+  sprintf(string, "%2.2i:%2.2i:%2.2i", hour(), minute(), second());
 
   if (hour() < old_rtc_hour)
   {
@@ -67,7 +66,7 @@ void display_date(int x, int y)
 {
   getTeensy3Time();
   char string[11];
-  sprintf(string, "%2i/%2i/%4i", day(), month(), year());
+  sprintf(string, "%2.2i/%2.2i/%4.4i", day(), month(), year());
   tft.textColor(WHITE, BLACK);
   tft.setCursor(x, y);
   tft.setFontSize(2, true);
@@ -113,7 +112,7 @@ bool open_stationData_file(void)
     if (call_part != NULL)
       strcpy(Station_Call, call_part);
     if (locator_part != NULL)
-      strcpy(Locator, locator_part);
+      strcpy(Station_Locator, locator_part);
     if (free_text1_part != NULL)
       strcpy(Free_Text1, free_text1_part);
     if (free_text2_part != NULL)
@@ -126,7 +125,7 @@ bool open_stationData_file(void)
 void display_station_data(int x, int y)
 {
   char str[13];
-  sprintf(str, "%7s %4s", Station_Call, Locator);
+  sprintf(str, "%7s %4s", Station_Call, Station_Locator);
 
   tft.textColor(YELLOW, BLACK);
   tft.setCursor(x, y);
@@ -146,7 +145,7 @@ void display_revision_level(void)
   tft.write("Hardware: V3.0", 14);
 
   tft.setCursor(0, 160);
-  tft.write("Firmware: V1.3", 14);
+  tft.write("Firmware: V1.0", 14);
 
   tft.setCursor(0, 190);
   tft.write("W5BAA - WB2CBA", 14);
@@ -165,10 +164,6 @@ void display_revision_level(void)
   tft.write("Gears & Pulleys", 15);
   tft.setCursor(0, 330);
   tft.write("Are Aligned", 12);
-
-
-  tft.fillRect(0, 100, 300, 400, BLACK);
-  
 }
 
 void show_decimal(uint16_t x, uint16_t y, float variable)
@@ -231,7 +226,6 @@ void update_message_log_display(int mode)
   }
 
   tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
-  tft.fillRect(START_X_RIGHT, 140, 260, 400, BLACK);
   tft.setFontSize(2, true);
 
   for (int i = 0; i < max_log_messages; i++)
@@ -241,7 +235,7 @@ void update_message_log_display(int mode)
     else
       tft.textColor(RED, BLACK);
 
-    tft.setCursor(START_X_RIGHT, 140 + i * 40);
+    tft.setCursor(left_hand_message, 100 + i * 40);
     tft.write(log_messages[i].message, 18);
   }
 }
