@@ -231,11 +231,12 @@ void update_message_log_display(int mode)
     log_messages[max_log_messages - 1].text_color = 0;
   }
 
+  /*
   tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
   tft.fillRect(START_X_RIGHT, 140, 260, 400, BLACK);
   tft.setFontSize(2, true);
 
-  /*
+  
   for (int i = 0; i < max_log_messages; i++)
   {
     if (log_messages[i].text_color)
@@ -252,6 +253,10 @@ void update_message_log_display(int mode)
 }
 
 void display_logged_messages(void){
+
+ // tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
+  tft.fillRect(START_X_RIGHT, 140, 260, 400, BLACK);
+  tft.setFontSize(2, true);
 
   for (int i = 0; i < max_log_messages; i++)
   {
