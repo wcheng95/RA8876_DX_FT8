@@ -22,7 +22,6 @@
 #include "AudioStream.h"
 #include "filters.h"
 #include "constants.h"
-#include "maidenhead.h"
 #include "gen_ft8.h"
 #include "options.h"
 #include "ADIF.h"
@@ -93,8 +92,9 @@ q15_t __attribute__((aligned(4))) dsp_buffer[FFT_BASE_SIZE * 3];
 q15_t __attribute__((aligned(4))) dsp_output[FFT_SIZE * 2];
 q15_t __attribute__((aligned(4))) input_gulp[FFT_BASE_SIZE * 5];
 
-char Station_Call[11];   // six character call sign + /0
-char Station_Locator[7]; // four character locator  + /0
+char Station_Call[11];         // six character call sign + /0
+char Station_Locator[7];       // up to six character locator  + /0
+char Short_Station_Locator[5]; // four character locator  + /0
 
 uint16_t currentFrequency;
 
@@ -221,7 +221,14 @@ void setup(void)
 
   open_stationData_file();
 
-  set_Station_Coordinates(Station_Locator);
+  set_Station_Coordinates();
+
+  LatLong ll = QRAtoLatLong(Station_Locator);
+  if (ll.isValid)
+  {
+    show_decimal(680, 60, ll.latitude);
+    show_decimal(880, 60, ll.longitude);
+  }
 
   display_all_buttons();
   display_date(650, 30);
@@ -277,15 +284,15 @@ void loop()
 
     master_decoded = ft8_decode();
     if (master_decoded > 0)
-
       display_messages(master_decoded);
+
     if (Beacon_On)
       service_Beacon_mode(master_decoded);
     else
       service_QSO_mode(master_decoded);
 
     decode_flag = 0;
-  } // end of servicing FT_Decode
+  }
 
   process_touch();
 
@@ -336,13 +343,6 @@ void update_synchronization()
     FT_8_counter = 0;
     ft8_marker = 1;
     WF_counter = 0;
-
-    LatLong ll = QRAtoLatLong(Station_Locator);
-    if (ll.isValid)
-    {
-      show_decimal(680, 60, ll.latitude);
-      show_decimal(880, 60, ll.longitude);
-    }
 
     if (QSO_xmit == 1 && target_slot == slot_state)
     {

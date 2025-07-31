@@ -15,6 +15,7 @@ extern AudioAmplifier in_right_amp;
 
 extern char Station_Call[];
 extern char Station_Locator[];
+extern char Short_Station_Locator[];
 extern int decode_flag;
 extern uint16_t cursor_line;
 extern int Tune_On;

@@ -112,7 +112,11 @@ bool open_stationData_file(void)
     if (call_part != NULL)
       strcpy(Station_Call, call_part);
     if (locator_part != NULL)
+    {
       strcpy(Station_Locator, locator_part);
+      memcpy(Short_Station_Locator, locator_part, 4);
+      Short_Station_Locator[4] = 0;
+    }
     if (free_text1_part != NULL)
       strcpy(Free_Text1, free_text1_part);
     if (free_text2_part != NULL)
@@ -125,7 +129,7 @@ bool open_stationData_file(void)
 void display_station_data(int x, int y)
 {
   char str[13];
-  sprintf(str, "%7s %4s", Station_Call, Station_Locator);
+  sprintf(str, "%7s %4s", Station_Call, Short_Station_Locator);
 
   tft.textColor(YELLOW, BLACK);
   tft.setCursor(x, y);

@@ -67,7 +67,7 @@ void compose_messages(void)
   itoa(in_range(Target_RSL, -999, 9999), RSL, 10);
 
   strcpy(xmit_messages[0], blank);
-  sprintf(xmit_messages[0], "%s %s %s", Target_Call, Station_Call, Station_Locator);
+  sprintf(xmit_messages[0], "%s %s %s", Target_Call, Station_Call, Short_Station_Locator);
   strcpy(xmit_messages[1], blank);
   sprintf(xmit_messages[1], "%s %s R%s", Target_Call, Station_Call, RSL);
   strcpy(xmit_messages[2], blank);
@@ -180,11 +180,11 @@ void set_cq(void)
 
     if (mode == NULL)
     {
-      sprintf(CQ_message, "%s %s %s", CQ, Station_Call, Station_Locator);
+      sprintf(CQ_message, "%s %s %s", CQ, Station_Call, Short_Station_Locator);
     }
     else
     {
-      sprintf(CQ_message, "%s %s %s %s", CQ, mode, Station_Call, Station_Locator);
+      sprintf(CQ_message, "%s %s %s %s", CQ, mode, Station_Call, Short_Station_Locator);
     }
   }
   else

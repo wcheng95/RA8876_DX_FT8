@@ -56,7 +56,6 @@ void process_selected_Station(int stations_decoded, int TouchIndex);
 void clear_decoded_messages(void);
 void clear_log_stored_data(void);
 
-int validate_locator(const char *QSO_locator);
 int strindex(const char *s, const char *t);
 
 extern int Auto_QSO_State;
