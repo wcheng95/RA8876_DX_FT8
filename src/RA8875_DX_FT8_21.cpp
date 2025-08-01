@@ -437,17 +437,17 @@ bool addSenderRecord(const char *callsign, const char *gridSquare, const char *s
 
     // Add gridSquare as length-delimited
     *ptr++ = (uint8_t)gridSquareLength;
-    memcpy(ptr, callsign, gridSquareLength);
+    memcpy(ptr, gridSquare, gridSquareLength);
     ptr += gridSquareLength;
 
     // Add software as length-delimited
-    *ptr++ = softwareLength;
+    *ptr++ = (uint8_t)softwareLength;
     memcpy(ptr, software, softwareLength);
+    ptr += softwareLength;
 
     Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-    Wire1.write(buffer, bufferSize);
-    uint8_t regVal = Wire1.endTransmission();
-    result = (regVal == 0);
+    Wire1.write(buffer, ptr - buffer);
+    result = (Wire1.endTransmission() == 0);
   }
   return result;
 }
@@ -463,21 +463,20 @@ bool addReceivedRecord(const char *callsign, uint32_t frequency, uint8_t snr)
     uint8_t *ptr = buffer;
     *ptr++ = (uint8_t)OP_RECEIVER_RECORD;
     // Add callsign as length-delimited
-    *ptr++ = callsignLength;
+    *ptr++ = (uint8_t)callsignLength;
     memcpy(ptr, callsign, callsignLength);
     ptr += callsignLength;
 
     // Add frequency
     memcpy(ptr, &frequency, sizeof(frequency));
-    ptr += sizeof(frequency);
+    ptr += (uint8_t)sizeof(frequency);
 
     // Add SNR (1 byte)
-    *ptr = snr;
+    *ptr++ = snr;
 
     Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-    Wire1.write(buffer, bufferSize);
-    uint8_t regVal = Wire1.endTransmission();
-    result = (regVal == 0);
+    Wire1.write(buffer, ptr - buffer);
+    result = (Wire1.endTransmission() == 0);
   }
   return result;
 }
@@ -486,6 +485,5 @@ bool sendRequest()
 {
   Wire1.beginTransmission(ESP32_I2C_ADDRESS);
   Wire1.write(OP_SEND_REQUEST);
-  uint8_t regVal = Wire1.endTransmission();
-  return (regVal == 0);
+  return ( Wire1.endTransmission() == 0);
 }
