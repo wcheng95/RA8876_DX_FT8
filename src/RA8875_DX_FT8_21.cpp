@@ -144,7 +144,8 @@ static const uint8_t ESP32_I2C_ADDRESS = 0x2A;
 
 static void process_data();
 static void update_synchronization();
-static void get_time();
+//static void get_time();
+void get_time();
 
 void setup(void)
 {
@@ -293,7 +294,7 @@ void loop()
     process_selected_Station(master_decoded, FT_8_TouchIndex);
 
   update_synchronization();
-  get_time();
+  //get_time();
 }
 
 time_t getTeensy3Time()
@@ -364,7 +365,8 @@ void sync_FT8(void)
   WF_counter = 0;
 }
 
-static void get_time()
+//static void get_time()
+void get_time()
 {
   if (syncTime)
   {

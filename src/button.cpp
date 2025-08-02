@@ -68,6 +68,8 @@ int Free_Index;
 
 int Map_Index;
 
+extern  void get_time();
+
 #define numButtons 23
 #define button_height 100
 #define button_height_Low 60
@@ -539,6 +541,7 @@ void executeButton(uint16_t index)
       Tune_On = 1; // Turns off display of FT8 traffic
       setup_Cal_Display();
       Arm_Tune = 0;
+      get_time();
     }
     break;
 
