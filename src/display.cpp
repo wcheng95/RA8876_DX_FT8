@@ -147,7 +147,7 @@ void display_revision_level(void)
   tft.write("Hardware: V3.0", 14);
 
   tft.setCursor(0, 160);
-  tft.write("Firmware: V1.3", 14);
+  tft.write("Firmware: V1.2", 14);
 
   tft.setCursor(0, 190);
   tft.write("W5BAA - WB2CBA", 14);
@@ -269,6 +269,6 @@ void display_logged_messages(void){
     tft.write(log_messages[i].message, 18);
   }
 
-  log_display_flag = 0;
+
 
 }

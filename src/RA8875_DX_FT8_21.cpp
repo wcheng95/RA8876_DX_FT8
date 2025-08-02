@@ -386,7 +386,11 @@ if (clr_pressed) {
 			tx_display_update();
 		}
     
-      if(log_display_flag ==1) display_logged_messages();
+      if( !Tune_On &&  log_display_flag == 1) 
+      {
+        display_logged_messages();
+        log_display_flag = 0;
+      }
 
 		if (!Tune_On && FT8_Touch_Flag && FT_8_TouchIndex < master_decoded) {
 			process_selected_Station(master_decoded, FT_8_TouchIndex);
