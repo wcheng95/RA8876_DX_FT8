@@ -85,6 +85,7 @@ void terminate_QSO(void)
   xmit_flag = 0;
 }
 
+/*
 void service_QSO_mode(int decoded_signals)
 {
   int receive_status = Check_Calling_Stations(decoded_signals);
@@ -177,7 +178,11 @@ void service_Beacon_mode(int decoded_signals)
     break;
   }
 
+
+
 } // end of service_Beacon_mode
+
+  */
 
 void set_Rcvr_Freq(void)
 {

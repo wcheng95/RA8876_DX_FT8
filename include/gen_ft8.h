@@ -47,4 +47,6 @@ extern char Free_Text1[];
 extern char Free_Text2[];
 extern int left_hand_message;
 
+void queue_custom_text(const char *tx_msg);
+
 #endif /* GEN_FT8_H_ */

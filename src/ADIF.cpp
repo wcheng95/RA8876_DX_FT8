@@ -300,7 +300,7 @@ void write_ADIF_Log()
   offset += sprintf(log_line + offset, "<time_on:%1u>%s ", num_chars(log_rtc_time_string), trim_front(log_rtc_time_string));
   offset += sprintf(log_line + offset, "<freq:%1u>%s ", num_chars(freq), trim_front(freq));
   offset += sprintf(log_line + offset, "<station_callsign:%1u>%s ", num_chars(Station_Call), trim_front(Station_Call));
-  offset += sprintf(log_line + offset, "<my_gridsquare:%1u>%s ", num_chars(Station_Locator), trim_front(Station_Locator));
+  offset += sprintf(log_line + offset, "<my_gridsquare:%1u>%s ", num_chars(Locator), trim_front(Locator));
 
   int rsl_len = num_digits(Target_RSL);
   if (rsl_len > 0)
@@ -339,8 +339,8 @@ static void draw_QTH(void)
   float QTH_Distance;
   float QTH_Bearing;
 
-  QTH_Distance = Map_Distance(Station_Locator); 
-  QTH_Bearing = Map_Bearing(Station_Locator);
+  QTH_Distance = Map_Distance(Locator); 
+  QTH_Bearing = Map_Bearing(Locator);
 
   draw_vector(QTH_Distance, QTH_Bearing, 3, 2);
 }

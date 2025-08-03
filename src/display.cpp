@@ -12,12 +12,14 @@
 #include "button.h"
 #include "main.h"
 #include "gen_ft8.h"
+#include "autoseq_engine.h"
 
 File stationData_File;
 
-int max_log_messages = 10;
+int max_log_messages = 9;
+extern int  log_display_flag;
 display_message_details log_messages[10];
-char current_message[40];
+char current_message[22];
 
 int old_rtc_hour;
 
@@ -112,7 +114,7 @@ bool open_stationData_file(void)
     if (call_part != NULL)
       strcpy(Station_Call, call_part);
     if (locator_part != NULL)
-      strcpy(Station_Locator, locator_part);
+      strcpy(Locator, locator_part);
     if (free_text1_part != NULL)
       strcpy(Free_Text1, free_text1_part);
     if (free_text2_part != NULL)
@@ -125,7 +127,7 @@ bool open_stationData_file(void)
 void display_station_data(int x, int y)
 {
   char str[13];
-  sprintf(str, "%7s %4s", Station_Call, Station_Locator);
+  sprintf(str, "%7s %4s", Station_Call,Locator);
 
   tft.textColor(YELLOW, BLACK);
   tft.setCursor(x, y);
@@ -145,7 +147,7 @@ void display_revision_level(void)
   tft.write("Hardware: V3.0", 14);
 
   tft.setCursor(0, 160);
-  tft.write("Firmware: V1.0", 14);
+  tft.write("Firmware:  NTP", 14);
 
   tft.setCursor(0, 190);
   tft.write("W5BAA - WB2CBA", 14);
@@ -225,7 +227,15 @@ void update_message_log_display(int mode)
     log_messages[max_log_messages - 1].text_color = 0;
   }
 
-  tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
+
+  log_display_flag = 1;
+}
+
+
+void display_logged_messages(void){
+
+ // tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
+  tft.fillRect(START_X_RIGHT, 140, 260, 400, BLACK);
   tft.setFontSize(2, true);
 
   for (int i = 0; i < max_log_messages; i++)
@@ -235,7 +245,8 @@ void update_message_log_display(int mode)
     else
       tft.textColor(RED, BLACK);
 
-    tft.setCursor(left_hand_message, 100 + i * 40);
+    tft.setCursor(START_X_RIGHT, 180 + i * 40);
     tft.write(log_messages[i].message, 18);
   }
+
 }

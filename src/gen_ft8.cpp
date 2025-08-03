@@ -67,7 +67,7 @@ void compose_messages(void)
   itoa(in_range(Target_RSL, -999, 9999), RSL, 10);
 
   strcpy(xmit_messages[0], blank);
-  sprintf(xmit_messages[0], "%s %s %s", Target_Call, Station_Call, Station_Locator);
+  sprintf(xmit_messages[0], "%s %s %s", Target_Call, Station_Call, Locator);
   strcpy(xmit_messages[1], blank);
   sprintf(xmit_messages[1], "%s %s R%s", Target_Call, Station_Call, RSL);
   strcpy(xmit_messages[2], blank);
@@ -180,11 +180,11 @@ void set_cq(void)
 
     if (mode == NULL)
     {
-      sprintf(CQ_message, "%s %s %s", CQ, Station_Call, Station_Locator);
+      sprintf(CQ_message, "%s %s %s", CQ, Station_Call, Locator);
     }
     else
     {
-      sprintf(CQ_message, "%s %s %s %s", CQ, mode, Station_Call, Station_Locator);
+      sprintf(CQ_message, "%s %s %s %s", CQ, mode, Station_Call, Locator);
     }
   }
   else
@@ -227,4 +227,13 @@ void clear_xmit_messages(void)
   tft.setFontSize(2, true);
   tft.setCursor(left_hand_message, 520);
   tft.write(xmit_message, 18);
+}
+
+// Needed by autoseq_engine
+void queue_custom_text(const char *tx_msg)
+{
+	uint8_t packed[K_BYTES];
+
+	pack77(tx_msg, packed);
+	genft8(packed, tones);
 }
