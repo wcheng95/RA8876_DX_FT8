@@ -421,34 +421,39 @@ static void get_time()
 bool addSenderRecord(const char *callsign, const char *gridSquare, const char *software)
 {
   bool result = false;
-  uint8_t buffer[32];
-  size_t callsignLength = strlen(callsign);
-  size_t gridSquareLength = strlen(gridSquare);
-  size_t softwareLength = strlen(software);
-
-  size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint8_t) + gridSquareLength + sizeof(uint8_t) + softwareLength;
-  if (bufferSize < sizeof(buffer))
+  Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+  uint8_t regVal = Wire1.endTransmission();
+  if (regVal == 0)
   {
-    uint8_t *ptr = buffer;
-    *ptr++ = (uint8_t)OP_SENDER_RECORD;
-    // Add callsign as length-delimited
-    *ptr++ = (uint8_t)callsignLength;
-    memcpy(ptr, callsign, callsignLength);
-    ptr += callsignLength;
+    uint8_t buffer[32];
+    size_t callsignLength = strlen(callsign);
+    size_t gridSquareLength = strlen(gridSquare);
+    size_t softwareLength = strlen(software);
 
-    // Add gridSquare as length-delimited
-    *ptr++ = (uint8_t)gridSquareLength;
-    memcpy(ptr, gridSquare, gridSquareLength);
-    ptr += gridSquareLength;
+    size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint8_t) + gridSquareLength + sizeof(uint8_t) + softwareLength;
+    if (bufferSize < sizeof(buffer))
+    {
+      uint8_t *ptr = buffer;
+      *ptr++ = (uint8_t)OP_SENDER_RECORD;
+      // Add callsign as length-delimited
+      *ptr++ = (uint8_t)callsignLength;
+      memcpy(ptr, callsign, callsignLength);
+      ptr += callsignLength;
 
-    // Add software as length-delimited
-    *ptr++ = (uint8_t)softwareLength;
-    memcpy(ptr, software, softwareLength);
-    ptr += softwareLength;
+      // Add gridSquare as length-delimited
+      *ptr++ = (uint8_t)gridSquareLength;
+      memcpy(ptr, gridSquare, gridSquareLength);
+      ptr += gridSquareLength;
 
-    Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-    Wire1.write(buffer, ptr - buffer);
-    result = (Wire1.endTransmission() == 0);
+      // Add software as length-delimited
+      *ptr++ = (uint8_t)softwareLength;
+      memcpy(ptr, software, softwareLength);
+      ptr += softwareLength;
+
+      Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+      Wire1.write(buffer, ptr - buffer);
+      result = (Wire1.endTransmission() == 0);
+    }
   }
   return result;
 }
@@ -456,28 +461,33 @@ bool addSenderRecord(const char *callsign, const char *gridSquare, const char *s
 bool addReceivedRecord(const char *callsign, uint32_t frequency, uint8_t snr)
 {
   bool result = false;
-  uint8_t buffer[32];
-  size_t callsignLength = strlen(callsign);
-  size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint32_t) + sizeof(uint8_t);
-  if (bufferSize < sizeof(buffer))
+  Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+  uint8_t regVal = Wire1.endTransmission();
+  if (regVal == 0)
   {
-    uint8_t *ptr = buffer;
-    *ptr++ = (uint8_t)OP_RECEIVER_RECORD;
-    // Add callsign as length-delimited
-    *ptr++ = (uint8_t)callsignLength;
-    memcpy(ptr, callsign, callsignLength);
-    ptr += callsignLength;
+    uint8_t buffer[32];
+    size_t callsignLength = strlen(callsign);
+    size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint32_t) + sizeof(uint8_t);
+    if (bufferSize < sizeof(buffer))
+    {
+      uint8_t *ptr = buffer;
+      *ptr++ = (uint8_t)OP_RECEIVER_RECORD;
+      // Add callsign as length-delimited
+      *ptr++ = (uint8_t)callsignLength;
+      memcpy(ptr, callsign, callsignLength);
+      ptr += callsignLength;
 
-    // Add frequency
-    memcpy(ptr, &frequency, sizeof(frequency));
-    ptr += (uint8_t)sizeof(frequency);
+      // Add frequency
+      memcpy(ptr, &frequency, sizeof(frequency));
+      ptr += (uint8_t)sizeof(frequency);
 
-    // Add SNR (1 byte)
-    *ptr++ = snr;
+      // Add SNR (1 byte)
+      *ptr++ = snr;
 
-    Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-    Wire1.write(buffer, ptr - buffer);
-    result = (Wire1.endTransmission() == 0);
+      Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+      Wire1.write(buffer, ptr - buffer);
+      result = (Wire1.endTransmission() == 0);
+    }
   }
   return result;
 }
