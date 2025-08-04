@@ -278,9 +278,8 @@ void write_ADIF_Log()
   make_time();
   make_date();
 
-  strcpy(display_frequency, sBand_Data[BandIndex].display);
-
   const char *freq = sBand_Data[BandIndex].display;
+  strcpy(display_frequency, freq);
 
   int offset = sprintf(log_line, "<call:%1u>%s ", num_chars(Target_Call), trim_front(Target_Call));
   int target_locator_len = num_chars(Target_Locator);

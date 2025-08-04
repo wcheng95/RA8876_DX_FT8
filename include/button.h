@@ -13,14 +13,12 @@ struct ButtonStruct
   const uint16_t y;
   const uint16_t w;
   const uint16_t h;
-
 };
 
 struct FreqStruct
 {
   uint16_t Frequency;
   const char *display;
-
 };
 
 enum BandIndex

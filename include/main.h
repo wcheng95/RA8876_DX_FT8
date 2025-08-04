@@ -19,7 +19,6 @@ extern char Short_Station_Locator[];
 extern int decode_flag;
 extern uint16_t cursor_line;
 extern int Tune_On;
-extern uint16_t currentFrequency;
 extern int master_decoded;
 extern uint16_t cursor_freq;
 extern int ft8_flag;

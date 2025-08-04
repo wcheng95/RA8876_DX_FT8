@@ -96,8 +96,6 @@ char Station_Call[11];         // six character call sign + /0
 char Station_Locator[7];       // up to six character locator  + /0
 char Short_Station_Locator[5]; // four character locator  + /0
 
-uint16_t currentFrequency;
-
 uint32_t current_time, start_time;
 int ft8_flag;
 int FT_8_counter;

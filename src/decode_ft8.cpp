@@ -175,7 +175,7 @@ int ft8_decode(void)
           }
         }
 
-        addReceivedRecord(field1, new_decoded[num_decoded].freq_hz, raw_RSL);
+        addReceivedRecord(field2, sBand_Data[BandIndex].Frequency, display_RSL);
 
         ++num_decoded;
       }

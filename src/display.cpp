@@ -15,11 +15,11 @@
 
 File stationData_File;
 
-int max_log_messages = 10;
-display_message_details log_messages[10];
-char current_message[40];
+static const int max_log_messages = 10;
+static int old_rtc_hour = -1;
 
-int old_rtc_hour;
+display_message_details log_messages[max_log_messages];
+char current_message[40];
 
 void display_value(int x, int y, int value)
 {
