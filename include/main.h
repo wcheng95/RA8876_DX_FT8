@@ -33,3 +33,5 @@ extern q15_t __attribute__((aligned(4))) dsp_output[];
 
 void display_messages(int decoded_messages);
 time_t getTeensy3Time(void);
+bool addSenderRecord(const char *callsign, const char *gridSquare, const char *software);
+bool addReceivedRecord(const char *callsign, uint32_t frequency, uint8_t snr);

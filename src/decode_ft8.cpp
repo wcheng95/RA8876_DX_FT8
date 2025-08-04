@@ -124,10 +124,7 @@ int ft8_decode(void)
 
     getTeensy3Time();
     char rtc_string[10]; // print format stuff
-    sprintf(rtc_string, "%2i%2i%2i", hour(), minute(), second());
-    for (int j = 0; j < 9; j++)
-      if (rtc_string[j] == 32)
-        rtc_string[j] = 48;
+    sprintf(rtc_string, "%02i%02i%02i", hour(), minute(), second());
 
     if (!found && num_decoded < kMax_decoded_messages)
     {
@@ -177,6 +174,8 @@ int ft8_decode(void)
             new_decoded[num_decoded].received_snr = received_RSL;
           }
         }
+
+        addReceivedRecord(field1, new_decoded[num_decoded].freq_hz, raw_RSL);
 
         ++num_decoded;
       }

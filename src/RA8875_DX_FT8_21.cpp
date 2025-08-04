@@ -240,6 +240,7 @@ void setup(void)
 
   Init_Log_File();
   draw_map(Map_Index);
+  addSenderRecord(Station_Call, Station_Locator, "DX FT8 Xceiver");
 }
 
 void loop()
@@ -485,5 +486,5 @@ bool sendRequest()
 {
   Wire1.beginTransmission(ESP32_I2C_ADDRESS);
   Wire1.write(OP_SEND_REQUEST);
-  return ( Wire1.endTransmission() == 0);
+  return (Wire1.endTransmission() == 0);
 }

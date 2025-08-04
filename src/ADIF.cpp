@@ -76,28 +76,19 @@ static File Log_File;
 static void make_date(void)
 {
   getTeensy3Time();
-  sprintf(log_rtc_date_string, "%4i%2i%2i", year(), month(), day());
-  for (int i = 0; i < 9; i++)
-    if (log_rtc_date_string[i] == 32)
-      log_rtc_date_string[i] = 48;
+  sprintf(log_rtc_date_string, "%04i%02i%02i", year(), month(), day());
 }
 
 void make_time(void)
 {
   getTeensy3Time();
-  sprintf(log_rtc_time_string, "%2i%2i%2i", hour(), minute(), second());
-  for (int i = 0; i < 9; i++)
-    if (log_rtc_date_string[i] == 32)
-      log_rtc_date_string[i] = 48;
+  sprintf(log_rtc_time_string, "%02i%02i%02i", hour(), minute(), second());
 }
 
 void make_File_Name(void)
 {
   make_date();
   sprintf((char *)file_name_string, "%s.adi", log_rtc_date_string);
-  for (int i = 0; i < 24; i++)
-    if (file_name_string[i] == 32)
-      file_name_string[i] = 48;
 }
 
 static void write_log_data(char *data)
