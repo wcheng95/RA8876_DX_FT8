@@ -120,6 +120,7 @@ int target_slot;
 static bool syncTime = true;
 static int syncTimeCounter = 0;
 static const int MAX_SYNCTIME_RETRIES = 10;
+static bool senderSent = true;
 
 struct RTC_Time
 {
@@ -241,7 +242,6 @@ void setup(void)
 
   Init_Log_File();
   draw_map(Map_Index);
-  addSenderRecord(Station_Call, Station_Locator, "DX FT8 Xceiver");
 }
 
 void loop()
@@ -481,6 +481,12 @@ bool addSenderRecord(const char *callsign, const char *gridSquare, const char *s
 
 bool addReceivedRecord(const char *callsign, uint32_t frequency, uint8_t snr)
 {
+  if (senderSent)
+  {
+      addSenderRecord(Station_Call, Station_Locator, "DX FT8 Transceiver");
+      senderSent = true;
+  }
+
   bool result = false;
   Wire1.beginTransmission(ESP32_I2C_ADDRESS);
   uint8_t retVal = Wire1.endTransmission();
