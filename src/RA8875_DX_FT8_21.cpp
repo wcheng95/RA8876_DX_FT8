@@ -134,6 +134,7 @@ enum I2COperation
 {
   OP_TIME_REQUEST = 0,
   OP_SENDER_RECORD,
+  OP_SENDER_SOFTWARE_RECORD,
   OP_RECEIVER_RECORD,
   OP_SEND_REQUEST
 };
@@ -368,8 +369,8 @@ static void get_time()
   if (syncTime)
   {
     Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-    uint8_t regVal = Wire1.endTransmission();
-    if (regVal == 0)
+    uint8_t retVal = Wire1.endTransmission();
+    if (retVal == 0)
     {
       RTC_Time rtcTime;
       memset(&rtcTime, 0, sizeof(rtcTime));
@@ -410,7 +411,7 @@ static void get_time()
     }
     else
     {
-      Serial.printf("Failed to read RTC time from ESP32 %u\n", regVal);
+      Serial.printf("Failed to read RTC time from ESP32 %u\n", retVal);
       syncTime = false;
     }
   }
@@ -420,15 +421,14 @@ bool addSenderRecord(const char *callsign, const char *gridSquare, const char *s
 {
   bool result = false;
   Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-  uint8_t regVal = Wire1.endTransmission();
-  if (regVal == 0)
+  uint8_t retVal = Wire1.endTransmission();
+  if (retVal == 0)
   {
     uint8_t buffer[32];
     size_t callsignLength = strlen(callsign);
     size_t gridSquareLength = strlen(gridSquare);
-    size_t softwareLength = strlen(software);
 
-    size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint8_t) + gridSquareLength + sizeof(uint8_t) + softwareLength;
+    size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint8_t) + gridSquareLength;
     if (bufferSize < sizeof(buffer))
     {
       uint8_t *ptr = buffer;
@@ -443,14 +443,28 @@ bool addSenderRecord(const char *callsign, const char *gridSquare, const char *s
       memcpy(ptr, gridSquare, gridSquareLength);
       ptr += gridSquareLength;
 
-      // Add software as length-delimited
-      *ptr++ = (uint8_t)softwareLength;
-      memcpy(ptr, software, softwareLength);
-      ptr += softwareLength;
-
       Wire1.beginTransmission(ESP32_I2C_ADDRESS);
       Wire1.write(buffer, ptr - buffer);
       result = (Wire1.endTransmission() == 0);
+    }
+
+    if (result)
+    {
+      size_t softwareLength = strlen(software);
+      bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + softwareLength;
+      if (bufferSize < sizeof(buffer))
+      {
+        uint8_t *ptr = buffer;
+        *ptr++ = (uint8_t)OP_SENDER_SOFTWARE_RECORD;
+        // Add software as length-delimited
+        *ptr++ = (uint8_t)softwareLength;
+        memcpy(ptr, software, softwareLength);
+        ptr += softwareLength;
+
+        Wire1.beginTransmission(ESP32_I2C_ADDRESS);
+        Wire1.write(buffer, ptr - buffer);
+        result = (Wire1.endTransmission() == 0);
+      }
     }
   }
   return result;
@@ -460,8 +474,8 @@ bool addReceivedRecord(const char *callsign, uint32_t frequency, uint8_t snr)
 {
   bool result = false;
   Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-  uint8_t regVal = Wire1.endTransmission();
-  if (regVal == 0)
+  uint8_t retVal = Wire1.endTransmission();
+  if (retVal == 0)
   {
     uint8_t buffer[32];
     size_t callsignLength = strlen(callsign);
