@@ -120,7 +120,7 @@ int target_slot;
 static bool syncTime = true;
 static int syncTimeCounter = 0;
 static const int MAX_SYNCTIME_RETRIES = 10;
-static bool senderSent = true;
+static bool senderSent = false;
 
 struct RTC_Time
 {
@@ -481,7 +481,7 @@ bool addSenderRecord(const char *callsign, const char *gridSquare, const char *s
 
 bool addReceivedRecord(const char *callsign, uint32_t frequency, uint8_t snr)
 {
-  if (senderSent)
+  if (!senderSent)
   {
       addSenderRecord(Station_Call, Station_Locator, "DX FT8 Transceiver");
       senderSent = true;
