@@ -178,7 +178,8 @@ int ft8_decode(void)
         // ignore hashed callsigns
         if (*field2 != '<')
         {
-          addReceivedRecord(field2, sBand_Data[BandIndex].Frequency, display_RSL);
+        	uint32_t frequency = (sBand_Data[BandIndex].Frequency * 1000) + new_decoded[num_decoded].freq_hz;
+          addReceivedRecord(field2, frequency, display_RSL);
         }
         ++num_decoded;
       }
