@@ -369,8 +369,9 @@ void sync_FT8(void)
 void requestTimeSync()
 {
   syncTime = true;
+  // also cause the sender record to be sent again
+  senderSent = false;
   syncTimeCounter = 0;
-  Serial.println("Requesting time sync ...");
 }
 
 static void get_time()

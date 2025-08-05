@@ -175,8 +175,11 @@ int ft8_decode(void)
           }
         }
 
-        addReceivedRecord(field2, sBand_Data[BandIndex].Frequency, display_RSL);
-
+        // ignore hashed callsigns
+        if (*field2 != '<')
+        {
+          addReceivedRecord(field2, sBand_Data[BandIndex].Frequency, display_RSL);
+        }
         ++num_decoded;
       }
     }
