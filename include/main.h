@@ -13,9 +13,9 @@ extern AudioAmplifier amp1;
 extern AudioAmplifier in_left_amp;
 extern AudioAmplifier in_right_amp;
 
-extern char Station_Call[];
-extern char Station_Locator[];
-extern char Short_Station_Locator[];
+extern char Station_Call[11];
+extern char Station_Locator[7];
+extern char Short_Station_Locator[5];
 extern int decode_flag;
 extern uint16_t cursor_line;
 extern int Tune_On;
@@ -25,7 +25,6 @@ extern int ft8_flag;
 extern int ft8_xmit_counter;
 extern int slot_state;
 extern int target_slot;
-extern bool syncTime;
 
 extern q15_t __attribute__((aligned(4))) dsp_buffer[];
 extern q15_t __attribute__((aligned(4))) dsp_output[];
@@ -34,3 +33,4 @@ void display_messages(int decoded_messages);
 time_t getTeensy3Time(void);
 bool addSenderRecord(const char *callsign, const char *gridSquare, const char *software);
 bool addReceivedRecord(const char *callsign, uint32_t frequency, uint8_t snr);
+void requestTimeSync(void);

@@ -967,7 +967,7 @@ void process_touch(void)
 
 void setup_Cal_Display(void)
 {
-  syncTime = true;
+  requestTimeSync();
   clear_reply_message_box();
   tft.fillRect(0, 100, 600, 439, BLACK);
   erase_CQ();

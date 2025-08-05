@@ -117,7 +117,9 @@ int QSO_xmit;
 int slot_state = 0;
 int target_slot;
 
-bool syncTime = true;
+static bool syncTime = true;
+static int syncTimeCounter = 0;
+static const int MAX_SYNCTIME_RETRIES = 10;
 
 struct RTC_Time
 {
@@ -364,9 +366,16 @@ void sync_FT8(void)
   WF_counter = 0;
 }
 
+void requestTimeSync()
+{
+  syncTime = true;
+  syncTimeCounter = 0;
+  Serial.println("Requesting time sync ...");
+}
+
 static void get_time()
 {
-  if (syncTime)
+  if (syncTime && syncTimeCounter++ < MAX_SYNCTIME_RETRIES)
   {
     Wire1.beginTransmission(ESP32_I2C_ADDRESS);
     uint8_t retVal = Wire1.endTransmission();
@@ -411,7 +420,7 @@ static void get_time()
     }
     else
     {
-      Serial.printf("Failed to read RTC time from ESP32 %u\n", retVal);
+      Serial.printf("Failed to read RTC time: %u\n", retVal);
       syncTime = false;
     }
   }
