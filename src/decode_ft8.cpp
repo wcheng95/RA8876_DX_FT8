@@ -31,6 +31,7 @@
 #include "main.h"
 #include "traffic_manager.h"
 #include "Geodesy.h"
+#include "PskInterface.h"
 
 char blank[27] = "                          ";
 int blank_length = 26;

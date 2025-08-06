@@ -17,6 +17,7 @@
 #include "ADIF.h"
 #include "main.h"
 #include "Maps.h"
+#include "PskInterface.h"
 
 #define Board_PIN 2
 #define Relay_PIN 3
