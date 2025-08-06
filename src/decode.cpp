@@ -212,7 +212,6 @@ static void decode_symbol(const uint8_t *power, const uint8_t *code_map,
   for (int j = 0; j < 8; ++j)
   {
     s2[j] = (float)power[code_map[j]];
-    // s2[j] = (float)work_fft_power[offset+code_map[j]];
   }
 
   log174[bit_idx + 0] = max4(s2[4], s2[5], s2[6], s2[7]) - max4(s2[0], s2[1], s2[2], s2[3]);

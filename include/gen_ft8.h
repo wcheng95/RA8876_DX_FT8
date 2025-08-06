@@ -40,11 +40,11 @@ void clear_xmit_messages(void);
 void genft8(const uint8_t *payload, uint8_t *itone);
 
 extern int Station_RSL;
-extern char Target_Call[];    // six character call sign + /0
+extern char Target_Call[11];    // six character call sign + /0
 extern int Target_RSL;
-extern char Target_Locator[]; // four character locator  + /0
-extern char Free_Text1[];
-extern char Free_Text2[];
+extern char Target_Locator[7]; // four character locator  + /0
+extern char Free_Text1[MESSAGE_SIZE];
+extern char Free_Text2[MESSAGE_SIZE];
 extern int left_hand_message;
 
 #endif /* GEN_FT8_H_ */

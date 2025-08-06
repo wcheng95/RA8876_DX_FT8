@@ -21,7 +21,7 @@ void draw_map(int16_t index);
 void write_ADIF_Log(void);
 void Init_Log_File(void);
 
-void set_Station_Coordinates(char station[]);
+void set_Station_Coordinates();
 
 extern int16_t map_width;
 extern int16_t map_heigth;

@@ -30,6 +30,8 @@
 #include "button.h"
 #include "main.h"
 #include "traffic_manager.h"
+#include "Geodesy.h"
+#include "PskInterface.h"
 
 char blank[27] = "                          ";
 int blank_length = 26;
@@ -123,10 +125,7 @@ int ft8_decode(void)
 
     getTeensy3Time();
     char rtc_string[10]; // print format stuff
-    sprintf(rtc_string, "%2i%2i%2i", hour(), minute(), second());
-    for (int j = 0; j < 9; j++)
-      if (rtc_string[j] == 32)
-        rtc_string[j] = 48;
+    sprintf(rtc_string, "%02i%02i%02i", hour(), minute(), second());
 
     if (!found && num_decoded < kMax_decoded_messages)
     {
@@ -147,19 +146,16 @@ int ft8_decode(void)
         display_RSL = (int)((raw_RSL - 160)) / 6;
         new_decoded[num_decoded].snr = display_RSL;
 
-        char Test_Locator[] = "    ";
-        char FT8_Message[] = "    ";
-
+        char Test_Locator[7];
         strcpy(Test_Locator, new_decoded[num_decoded].field3);
-
-        if (validate_locator(Test_Locator))
+        if (IsValidLocator(Test_Locator))
         {
           strcpy(new_decoded[num_decoded].target_locator, Test_Locator);
           new_decoded[num_decoded].sequence = Seq_Locator;
         }
 
+        char FT8_Message[7];
         strcpy(FT8_Message, new_decoded[num_decoded].field3);
-
         if (strindex(FT8_Message, "73") >= 0 || strindex(FT8_Message, "RR73") >= 0 || strindex(FT8_Message, "RRR") >= 0)
         {
           new_decoded[num_decoded].RR73 = 1;
@@ -180,6 +176,12 @@ int ft8_decode(void)
           }
         }
 
+        // ignore hashed callsigns
+        if (*field2 != '<')
+        {
+        	uint32_t frequency = (sBand_Data[BandIndex].Frequency * 1000) + new_decoded[num_decoded].freq_hz;
+          addReceivedRecord(field2, frequency, display_RSL);
+        }
         ++num_decoded;
       }
     }
@@ -229,34 +231,6 @@ void display_messages(int decoded_messages)
       tft.write(display[j].message, 18);
     }
   }
-}
-
-int validate_locator(const char *locator)
-{
-  uint8_t A1, A2, N1, N2;
-  uint8_t test = 0;
-
-  if (locator == NULL || strlen(locator) < 4)
-  {
-    return; // Invalid locator
-  }
-
-  A1 = locator[0] - 'A';
-  A2 = locator[1] - 'A';
-  N1 = locator[2] - '0';
-  N2 = locator[3] - '0';
-
-  if (A1 >= 0 && A1 <= 17)
-    test++;
-  if (A2 > 0 && A2 < 17)
-    test++; // block RR73 Artic and Anartica
-
-  if (N1 >= 0 && N1 <= 9)
-    test++;
-  if (N2 >= 0 && N2 <= 9)
-    test++;
-
-  return test == 4;
 }
 
 int strindex(const char *s, const char *t)

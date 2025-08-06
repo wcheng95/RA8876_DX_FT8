@@ -22,13 +22,13 @@
 #include "AudioStream.h"
 #include "filters.h"
 #include "constants.h"
-#include "maidenhead.h"
 #include "gen_ft8.h"
 #include "options.h"
 #include "ADIF.h"
 #include "AudioSDRpreProcessor.h"
 #include "main.h"
 #include "Geodesy.h"
+#include "PskInterface.h"
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
@@ -93,10 +93,9 @@ q15_t __attribute__((aligned(4))) dsp_buffer[FFT_BASE_SIZE * 3];
 q15_t __attribute__((aligned(4))) dsp_output[FFT_SIZE * 2];
 q15_t __attribute__((aligned(4))) input_gulp[FFT_BASE_SIZE * 5];
 
-char Station_Call[11];   // six character call sign + /0
-char Station_Locator[7]; // four character locator  + /0
-
-uint16_t currentFrequency;
+char Station_Call[11];         // six character call sign + /0
+char Station_Locator[7];       // up to six character locator  + /0
+char Short_Station_Locator[5]; // four character locator  + /0
 
 uint32_t current_time, start_time;
 int ft8_flag;
@@ -119,32 +118,8 @@ int QSO_xmit;
 int slot_state = 0;
 int target_slot;
 
-bool syncTime = true;
-
-struct RTC_Time
-{
-  uint8_t seconds; // 00-59 in BCD
-  uint8_t minutes; // 00-59 in BCD
-  uint8_t hours;   // 00-23 in BCD
-  uint8_t dayOfWeek;
-  uint8_t day;
-  uint8_t month;
-  uint8_t year;
-};
-
-enum I2COperation
-{
-  OP_TIME_REQUEST = 0,
-  OP_SENDER_RECORD,
-  OP_RECEIVER_RECORD,
-  OP_SEND_REQUEST
-};
-
-static const uint8_t ESP32_I2C_ADDRESS = 0x2A;
-
 static void process_data();
 static void update_synchronization();
-static void get_time();
 
 void setup(void)
 {
@@ -182,7 +157,6 @@ void setup(void)
   start_Si5351();
   init_DSP();
   set_startup_freq();
-  get_time();
 
   AudioMemory(100);
   preProcessor.startAutoI2SerrorDetection();
@@ -221,7 +195,14 @@ void setup(void)
 
   open_stationData_file();
 
-  set_Station_Coordinates(Station_Locator);
+  set_Station_Coordinates();
+
+  LatLong ll = QRAtoLatLong(Station_Locator);
+  if (ll.isValid)
+  {
+    show_decimal(680, 60, ll.latitude);
+    show_decimal(880, 60, ll.longitude);
+  }
 
   display_all_buttons();
   display_date(650, 30);
@@ -277,15 +258,15 @@ void loop()
 
     master_decoded = ft8_decode();
     if (master_decoded > 0)
-
       display_messages(master_decoded);
+
     if (Beacon_On)
       service_Beacon_mode(master_decoded);
     else
       service_QSO_mode(master_decoded);
 
     decode_flag = 0;
-  } // end of servicing FT_Decode
+  }
 
   process_touch();
 
@@ -293,7 +274,7 @@ void loop()
     process_selected_Station(master_decoded, FT_8_TouchIndex);
 
   update_synchronization();
-  get_time();
+  getTime();
 }
 
 time_t getTeensy3Time()
@@ -337,13 +318,6 @@ void update_synchronization()
     ft8_marker = 1;
     WF_counter = 0;
 
-    LatLong ll = QRAtoLatLong(Station_Locator);
-    if (ll.isValid)
-    {
-      show_decimal(680, 60, ll.latitude);
-      show_decimal(880, 60, ll.longitude);
-    }
-
     if (QSO_xmit == 1 && target_slot == slot_state)
     {
       setup_to_transmit_on_next_DSP_Flag();
@@ -362,130 +336,4 @@ void sync_FT8(void)
   FT_8_counter = 0;
   ft8_marker = 1;
   WF_counter = 0;
-}
-
-static void get_time()
-{
-  if (syncTime)
-  {
-    Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-    uint8_t regVal = Wire1.endTransmission();
-    if (regVal == 0)
-    {
-      RTC_Time rtcTime;
-      memset(&rtcTime, 0, sizeof(rtcTime));
-
-      Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-      Wire1.write(OP_TIME_REQUEST);
-      Wire1.endTransmission();
-      Wire1.requestFrom(ESP32_I2C_ADDRESS, sizeof(RTC_Time));
-      uint8_t *ptr = (uint8_t *)&rtcTime;
-      size_t size = 0;
-      for (;;)
-      {
-        if (Wire1.available())
-        {
-          ptr[size++] = Wire1.read();
-          if (size >= sizeof(RTC_Time))
-            break;
-        }
-      }
-
-      if (rtcTime.year > 24 && rtcTime.year < 99 && size == sizeof(RTC_Time))
-      {
-        syncTime = false;
-
-        Serial.printf("%u %2.2u:%2.2u:%2.2u %2.2u/%2.2u/%2.2u (%u)\n",
-                      size,
-                      rtcTime.hours, rtcTime.minutes, rtcTime.seconds,
-                      rtcTime.day, rtcTime.month, rtcTime.year,
-                      rtcTime.dayOfWeek);
-        setTime(rtcTime.hours,
-                rtcTime.minutes,
-                rtcTime.seconds,
-                rtcTime.day,
-                rtcTime.month,
-                rtcTime.year + 2000);
-        Teensy3Clock.set(now()); // set the RTC
-      }
-    }
-    else
-    {
-      Serial.printf("Failed to read RTC time from ESP32 %u\n", regVal);
-      syncTime = false;
-    }
-  }
-}
-
-bool addSenderRecord(const char *callsign, const char *gridSquare, const char *software)
-{
-  bool result = false;
-  uint8_t buffer[32];
-  size_t callsignLength = strlen(callsign);
-  size_t gridSquareLength = strlen(gridSquare);
-  size_t softwareLength = strlen(software);
-
-  size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint8_t) + gridSquareLength + sizeof(uint8_t) + softwareLength;
-  if (bufferSize < sizeof(buffer))
-  {
-    uint8_t *ptr = buffer;
-    *ptr++ = (uint8_t)OP_SENDER_RECORD;
-    // Add callsign as length-delimited
-    *ptr++ = (uint8_t)callsignLength;
-    memcpy(ptr, callsign, callsignLength);
-    ptr += callsignLength;
-
-    // Add gridSquare as length-delimited
-    *ptr++ = (uint8_t)gridSquareLength;
-    memcpy(ptr, callsign, gridSquareLength);
-    ptr += gridSquareLength;
-
-    // Add software as length-delimited
-    *ptr++ = softwareLength;
-    memcpy(ptr, software, softwareLength);
-
-    Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-    Wire1.write(buffer, bufferSize);
-    uint8_t regVal = Wire1.endTransmission();
-    result = (regVal == 0);
-  }
-  return result;
-}
-
-bool addReceivedRecord(const char *callsign, uint32_t frequency, uint8_t snr)
-{
-  bool result = false;
-  uint8_t buffer[32];
-  size_t callsignLength = strlen(callsign);
-  size_t bufferSize = sizeof(uint8_t) + sizeof(uint8_t) + callsignLength + sizeof(uint32_t) + sizeof(uint8_t);
-  if (bufferSize < sizeof(buffer))
-  {
-    uint8_t *ptr = buffer;
-    *ptr++ = (uint8_t)OP_RECEIVER_RECORD;
-    // Add callsign as length-delimited
-    *ptr++ = callsignLength;
-    memcpy(ptr, callsign, callsignLength);
-    ptr += callsignLength;
-
-    // Add frequency
-    memcpy(ptr, &frequency, sizeof(frequency));
-    ptr += sizeof(frequency);
-
-    // Add SNR (1 byte)
-    *ptr = snr;
-
-    Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-    Wire1.write(buffer, bufferSize);
-    uint8_t regVal = Wire1.endTransmission();
-    result = (regVal == 0);
-  }
-  return result;
-}
-
-bool sendRequest()
-{
-  Wire1.beginTransmission(ESP32_I2C_ADDRESS);
-  Wire1.write(OP_SEND_REQUEST);
-  uint8_t regVal = Wire1.endTransmission();
-  return (regVal == 0);
 }

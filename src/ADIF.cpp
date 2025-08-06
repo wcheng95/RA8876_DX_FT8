@@ -25,6 +25,7 @@
 #include "decode_ft8.h"
 #include "main.h"
 #include "Maps.h"
+#include "Geodesy.h"
 
 static const double EARTH_RAD = 6371; // radius in km
 
@@ -66,7 +67,6 @@ static int number_logged = 0;
 static double deg2rad(double deg);
 static double rad2deg(double rad);
 
-static float Latitude, Longitude;
 static float Station_Latitude, Station_Longitude;
 static float Map_Latitude, Map_Longitude;
 static float Target_Latitude, Target_Longitude;
@@ -76,28 +76,19 @@ static File Log_File;
 static void make_date(void)
 {
   getTeensy3Time();
-  sprintf(log_rtc_date_string, "%4i%2i%2i", year(), month(), day());
-  for (int i = 0; i < 9; i++)
-    if (log_rtc_date_string[i] == 32)
-      log_rtc_date_string[i] = 48;
+  sprintf(log_rtc_date_string, "%04i%02i%02i", year(), month(), day());
 }
 
 void make_time(void)
 {
   getTeensy3Time();
-  sprintf(log_rtc_time_string, "%2i%2i%2i", hour(), minute(), second());
-  for (int i = 0; i < 9; i++)
-    if (log_rtc_date_string[i] == 32)
-      log_rtc_date_string[i] = 48;
+  sprintf(log_rtc_time_string, "%02i%02i%02i", hour(), minute(), second());
 }
 
 void make_File_Name(void)
 {
   make_date();
   sprintf((char *)file_name_string, "%s.adi", log_rtc_date_string);
-  for (int i = 0; i < 24; i++)
-    if (file_name_string[i] == 32)
-      file_name_string[i] = 48;
 }
 
 static void write_log_data(char *data)
@@ -159,41 +150,6 @@ static void draw_vector(float distance, float bearing, int size, int color)
   }
 }
 
-static void process_locator(const char *locator)
-{
-  if (locator == NULL || strlen(locator) < 4)
-  {
-    Latitude = 0.0;
-    Longitude = 0.0;
-    return; // Invalid locator
-  }
-
-  uint8_t A1, A2, N1, N2;
-  uint8_t A1_value, A2_value, N1_value, N2_value;
-  float Latitude_1, Latitude_2, Latitude_3;
-  float Longitude_1, Longitude_2, Longitude_3;
-
-  A1 = locator[0];
-  A2 = locator[1];
-  N1 = locator[2];
-  N2 = locator[3];
-
-  A1_value = A1 - 'A';
-  A2_value = A2 - 'A';
-  N1_value = N1 - '0';
-  N2_value = N2 - '0';
-
-  Latitude_1 = (float)A2_value * 10;
-  Latitude_2 = (float)N2_value;
-  Latitude_3 = (11.0 / 24.0 + 1.0 / 48.0) - 90.0;
-  Latitude = Latitude_1 + Latitude_2 + Latitude_3;
-
-  Longitude_1 = (float)A1_value * 20.0;
-  Longitude_2 = (float)N1_value * 2.0;
-  Longitude_3 = 11.0 / 12.0 + 1.0 / 24.0;
-  Longitude = Longitude_1 + Longitude_2 + Longitude_3 - 180.0;
-}
-
 // distance (km) on earth's surface from point 1 to point 2
 static double distance(double lat1, double lon1, double lat2, double lon2)
 {
@@ -206,24 +162,44 @@ static double distance(double lat1, double lon1, double lat2, double lon2)
 
 static float Target_Distance(const char *target)
 {
-  process_locator(target);
-  Target_Latitude = Latitude;
-  Target_Longitude = Longitude;
+  LatLong ll = QRAtoLatLong(target);
+  if (ll.isValid)
+  {
+    Target_Latitude = ll.latitude;
+    Target_Longitude = ll.longitude;
+  }
+  else
+  {
+    Target_Latitude = Target_Longitude = 0.0;
+  }
 
-  return (float)distance((double)Station_Latitude, (double)Station_Longitude, (double)Target_Latitude, (double)Target_Longitude);
+  return distance(Station_Latitude, Station_Longitude, Target_Latitude, Target_Longitude);
 }
 
 static float Map_Distance(const char *target)
 {
-  process_locator(map_locator);
-  Map_Latitude = Latitude;
-  Map_Longitude = Longitude;
+  LatLong ll = QRAtoLatLong(target);
+  if (ll.isValid)
+  {
+    Map_Latitude = ll.latitude;
+    Map_Longitude = ll.longitude;
+  }
+  else
+  {
+    Map_Latitude = Map_Longitude = 0.0;
+  }
 
-  process_locator(target);
-  Target_Latitude = Latitude;
-  Target_Longitude = Longitude;
-
-  return (float)distance((double)Map_Latitude, (double)Map_Longitude, (double)Target_Latitude, (double)Target_Longitude);
+  ll = QRAtoLatLong(target);
+  if (ll.isValid)
+  {
+    Target_Latitude = ll.latitude;
+    Target_Longitude = ll.longitude;
+  }
+  else
+  {
+    Target_Latitude = Target_Longitude = 0.0;
+  }
+  return distance(Map_Latitude, Map_Longitude, Target_Latitude, Target_Longitude);
 }
 
 static double bearing(double lat1, double long1, double lat2, double long2)
@@ -244,15 +220,29 @@ static double bearing(double lat1, double long1, double lat2, double long2)
 
 float Map_Bearing(const char *target)
 {
-  process_locator(map_locator);
+  LatLong ll = QRAtoLatLong(map_locator);
+  if (ll.isValid)
+  {
+    Map_Latitude = ll.latitude;
+    Map_Longitude = ll.longitude;
+  }
+  else
+  {
+    Map_Latitude = Map_Longitude = 0.0;
+  }
 
-  Map_Latitude = Latitude;
-  Map_Longitude = Longitude;
-  process_locator(target);
-  Target_Latitude = Latitude;
-  Target_Longitude = Longitude;
+  ll = QRAtoLatLong(target);
+  if (ll.isValid)
+  {
+    Target_Latitude = ll.latitude;
+    Target_Longitude = ll.longitude;
+  }
+  else
+  {
+    Target_Latitude = Target_Longitude = 0.0;
+  }
 
-  return (float)bearing((double)Map_Latitude, (double)Map_Longitude, (double)Target_Latitude, (double)Target_Longitude);
+  return bearing(Map_Latitude, Map_Longitude, Target_Latitude, Target_Longitude);
 }
 
 static unsigned num_digits(int num)
@@ -287,10 +277,9 @@ void write_ADIF_Log()
 
   make_time();
   make_date();
-  
-  strcpy(display_frequency, sBand_Data[BandIndex].display);
 
   const char *freq = sBand_Data[BandIndex].display;
+  strcpy(display_frequency, freq);
 
   int offset = sprintf(log_line, "<call:%1u>%s ", num_chars(Target_Call), trim_front(Target_Call));
   int target_locator_len = num_chars(Target_Locator);
@@ -300,7 +289,7 @@ void write_ADIF_Log()
   offset += sprintf(log_line + offset, "<time_on:%1u>%s ", num_chars(log_rtc_time_string), trim_front(log_rtc_time_string));
   offset += sprintf(log_line + offset, "<freq:%1u>%s ", num_chars(freq), trim_front(freq));
   offset += sprintf(log_line + offset, "<station_callsign:%1u>%s ", num_chars(Station_Call), trim_front(Station_Call));
-  offset += sprintf(log_line + offset, "<my_gridsquare:%1u>%s ", num_chars(Station_Locator), trim_front(Station_Locator));
+  offset += sprintf(log_line + offset, "<my_gridsquare:%1u>%s ", num_chars(Short_Station_Locator), trim_front(Short_Station_Locator));
 
   int rsl_len = num_digits(Target_RSL);
   if (rsl_len > 0)
@@ -317,7 +306,8 @@ void write_ADIF_Log()
 
   write_log_data(log_line);
 
-  if (validate_locator(Target_Locator))
+  LatLong ll = QRAtoLatLong(Target_Locator);
+  if (ll.isValid)
     ADIF_distance = Target_Distance(Target_Locator);
   else
     ADIF_distance = 0;
@@ -327,7 +317,7 @@ void write_ADIF_Log()
     ADIF_map_distance = Map_Distance(Target_Locator);
     ADIF_map_bearing = Map_Bearing(Target_Locator);
 
-    draw_vector((float)ADIF_map_distance, (float)ADIF_map_bearing, 3, 3);
+    draw_vector(ADIF_map_distance, ADIF_map_bearing, 3, 3);
     stored_log_entries[number_logged].ADIF_map_distance = ADIF_map_distance;
     stored_log_entries[number_logged].ADIF_map_bearing = ADIF_map_bearing;
     number_logged++;
@@ -339,7 +329,7 @@ static void draw_QTH(void)
   float QTH_Distance;
   float QTH_Bearing;
 
-  QTH_Distance = Map_Distance(Station_Locator); 
+  QTH_Distance = Map_Distance(Station_Locator);
   QTH_Bearing = Map_Bearing(Station_Locator);
 
   draw_vector(QTH_Distance, QTH_Bearing, 3, 2);
@@ -408,11 +398,18 @@ void draw_map(int16_t index)
   draw_stored_entries();
 }
 
-void set_Station_Coordinates(char station[])
+void set_Station_Coordinates()
 {
-  process_locator(station);
-  Station_Latitude = Latitude;
-  Station_Longitude = Longitude;
+  LatLong ll = QRAtoLatLong(Station_Locator);
+  if (ll.isValid)
+  {
+    Station_Latitude = ll.latitude;
+    Station_Longitude = ll.longitude;
+  }
+  else
+  {
+    Station_Latitude = Station_Longitude = 0.0;
+  }
 }
 
 // convert degrees to radians

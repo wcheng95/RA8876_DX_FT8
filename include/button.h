@@ -13,14 +13,14 @@ struct ButtonStruct
   const uint16_t y;
   const uint16_t w;
   const uint16_t h;
-
 };
+
+#define BAND_DATA_SIZE 10
 
 struct FreqStruct
 {
-  uint16_t Frequency;
-  const char *display;
-
+	uint16_t Frequency;
+	char display[BAND_DATA_SIZE];
 };
 
 enum BandIndex

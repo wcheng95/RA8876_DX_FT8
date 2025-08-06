@@ -79,7 +79,7 @@ void Options_Initialize(void)
   SelectFilterBlock();
 
   start_freq = sBand_Data[BandIndex].Frequency;
-  show_wide(680, 0, (int)start_freq);
+  show_wide(680, 0, start_freq);
 
   Map_Index = Options_GetValue(1);
 }

@@ -12,7 +12,6 @@
 #include "button.h"
 #include "main.h"
 
-static uint8_t WF_index[ft8_buffer];
 static float window[FFT_SIZE];
 
 static q15_t __attribute__((aligned(4))) window_dsp_buffer[FFT_SIZE];
@@ -98,12 +97,11 @@ static int noise_free_sets_count = 0;
 
 static void update_offset_waterfall(int offset)
 {
-  for (int j = ft8_min_bin; j < ft8_buffer; j++)
-    FFT_Buffer[j] = export_fft_power[j + offset];
+  uint8_t WF_index[ft8_buffer];
 
   for (int x = ft8_min_bin; x < ft8_buffer; x++)
   {
-    uint8_t bar = FFT_Buffer[x];
+    uint8_t bar = FFT_Buffer[x] = export_fft_power[x + offset];
     if (bar > 63)
       bar = 63;
 

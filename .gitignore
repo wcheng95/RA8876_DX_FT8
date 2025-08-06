@@ -1,4 +1,4 @@
-.pio
-.vscode
+.pio/
+.vscode/
 firmware.map
 .DS_Store

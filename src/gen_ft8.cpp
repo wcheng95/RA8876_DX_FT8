@@ -30,8 +30,8 @@
 #include "main.h"
 #include "button.h"
 
-char Target_Call[7];    // six character call sign + /0
-char Target_Locator[5]; // four character locator  + /0
+char Target_Call[11];   // six character call sign + /0
+char Target_Locator[7]; // six character locator  + /0
 int Target_RSL;         // four character RSL  + /0
 int Station_RSL;
 
@@ -45,9 +45,9 @@ const char POTA[] = "POTA";
 const char QRP[] = "QRP";
 char display_message[26];
 
-char ft8_time_string[] = "15:44:15";
+char ft8_time_string[9] = "15:44:15";
 int left_hand_message = 300;
-char xmit_messages[3][19];
+char xmit_messages[3][MESSAGE_SIZE];
 
 static int in_range(int num, int min, int max)
 {
@@ -67,7 +67,7 @@ void compose_messages(void)
   itoa(in_range(Target_RSL, -999, 9999), RSL, 10);
 
   strcpy(xmit_messages[0], blank);
-  sprintf(xmit_messages[0], "%s %s %s", Target_Call, Station_Call, Station_Locator);
+  sprintf(xmit_messages[0], "%s %s %s", Target_Call, Station_Call, Short_Station_Locator);
   strcpy(xmit_messages[1], blank);
   sprintf(xmit_messages[1], "%s %s R%s", Target_Call, Station_Call, RSL);
   strcpy(xmit_messages[2], blank);
@@ -153,8 +153,8 @@ void clear_reply_message_box(void)
   tft.fillRect(left_hand_message, 100, 290, 420, BLACK);
 }
 
-char Free_Text1[] = "FreeText 1   ";
-char Free_Text2[] = "FreeText 2   ";
+char Free_Text1[MESSAGE_SIZE] = "FreeText 1   ";
+char Free_Text2[MESSAGE_SIZE] = "FreeText 2   ";
 
 void set_cq(void)
 {
@@ -180,11 +180,11 @@ void set_cq(void)
 
     if (mode == NULL)
     {
-      sprintf(CQ_message, "%s %s %s", CQ, Station_Call, Station_Locator);
+      sprintf(CQ_message, "%s %s %s", CQ, Station_Call, Short_Station_Locator);
     }
     else
     {
-      sprintf(CQ_message, "%s %s %s %s", CQ, mode, Station_Call, Station_Locator);
+      sprintf(CQ_message, "%s %s %s %s", CQ, mode, Station_Call, Short_Station_Locator);
     }
   }
   else

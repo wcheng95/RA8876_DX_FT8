@@ -17,6 +17,7 @@
 #include "ADIF.h"
 #include "main.h"
 #include "Maps.h"
+#include "PskInterface.h"
 
 #define Board_PIN 2
 #define Relay_PIN 3
@@ -967,7 +968,7 @@ void process_touch(void)
 
 void setup_Cal_Display(void)
 {
-  syncTime = true;
+  requestTimeSync();
   clear_reply_message_box();
   tft.fillRect(0, 100, 600, 439, BLACK);
   erase_CQ();
