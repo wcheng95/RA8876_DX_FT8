@@ -24,3 +24,9 @@ Here is a view of the current project  software taken while I was operating port
 
 Here is a link to the EasyEDA Board Schematic and PCB Design Drawing:
 https://oshwlab.com/chillmf20/v2-1_7-inch_teensy_pcb_copy_copy_copy
+
+Version 1.2
+
+In this version the device time can be synchonised to the Internet and reception reports uploaded to the PskReporter at https://www.pskreporter.info/
+This requires an external ESP32 module
+Please see https://github.com/g8kig/DX-FT8-TimeSync_PSKReporter for more information about constructing and programming the simple module that can be used with this transceiver
