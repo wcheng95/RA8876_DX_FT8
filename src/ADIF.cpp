@@ -71,6 +71,9 @@ static float Station_Latitude, Station_Longitude;
 static float Map_Latitude, Map_Longitude;
 static float Target_Latitude, Target_Longitude;
 
+static float QTH_Distance;
+static float QTH_Bearing;
+
 static File Log_File;
 
 static void make_date(void)
@@ -123,7 +126,10 @@ static void draw_vector(float distance, float bearing, int size, int color)
   float max_distance = MapFiles[map_key_index].max_distance;
 
   float vector_magnitude;
+  float QTH_vector_magnitude;
+
   int plot_X, plot_Y;
+  int plot_QTH_X, plot_QTH_Y;
 
   if (distance <= max_distance)
     vector_magnitude = distance / vector_scale;
@@ -133,19 +139,29 @@ static void draw_vector(float distance, float bearing, int size, int color)
   plot_X = (center_x) + (int)(sin(bearing * PI / 180) * vector_magnitude);
   plot_Y = (center_y) - (int)(cos(bearing * PI / 180) * vector_magnitude);
 
+  QTH_vector_magnitude = QTH_Distance / vector_scale;
+
+  plot_QTH_X = (center_x) + (int)(sin(QTH_Bearing* PI / 180) * QTH_vector_magnitude);
+  plot_QTH_Y = (center_y) - (int)(cos(QTH_Bearing * PI / 180) * QTH_vector_magnitude);
+
+
   switch (color)
   {
   case 0: // Yellow
-    tft.drawLine(center_x, center_y, plot_X, plot_Y, YELLOW);
+    tft.drawLine(plot_X,plot_Y, plot_QTH_X, plot_QTH_Y, YELLOW);
+    tft.drawCircleFill(plot_X, plot_Y, size, YELLOW);
     break;
   case 1: // White
-    tft.drawLine(center_x, center_y, plot_X, plot_Y, WHITE);
+    tft.drawLine(plot_X,plot_Y, plot_QTH_X, plot_QTH_Y, WHITE);
+    tft.drawCircleFill(plot_X, plot_Y, size, WHITE);
     break;
-  case 2:                                                     // Dark Green
-    tft.drawLine(center_x, center_y, plot_X, plot_Y, 0x0400); // Dark Green
+  case 2:  //Green                                              
+    tft.drawLine(plot_X,plot_Y, plot_QTH_X, plot_QTH_Y, 0x0400); 
+     tft.drawCircleFill(plot_X, plot_Y, size, 0x0400);
     break;
   case 3: // Red
-    tft.drawLine(center_x, center_y, plot_X, plot_Y, RED);
+    tft.drawLine(plot_X,plot_Y, plot_QTH_X, plot_QTH_Y, RED);
+    tft.drawCircleFill(plot_X, plot_Y, size, RED);
     break;
   }
 }
@@ -157,7 +173,9 @@ static double distance(double lat1, double lon1, double lat2, double lon2)
   double lon1r = deg2rad(lon1);
   double lat2r = deg2rad(lat2);
   double lon2r = deg2rad(lon2);
+
   return acos(sin(lat1r) * sin(lat2r) + cos(lat1r) * cos(lat2r) * cos(lon2r - lon1r)) * EARTH_RAD;
+
 }
 
 static float Target_Distance(const char *target)
@@ -178,7 +196,7 @@ static float Target_Distance(const char *target)
 
 static float Map_Distance(const char *target)
 {
-  LatLong ll = QRAtoLatLong(target);
+  LatLong ll = QRAtoLatLong(map_locator);
   if (ll.isValid)
   {
     Map_Latitude = ll.latitude;
@@ -324,10 +342,10 @@ void write_ADIF_Log()
   }
 }
 
+
+
 static void draw_QTH(void)
 {
-  float QTH_Distance;
-  float QTH_Bearing;
 
   QTH_Distance = Map_Distance(Station_Locator);
   QTH_Bearing = Map_Bearing(Station_Locator);

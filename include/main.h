@@ -1,6 +1,12 @@
 
 #pragma once
 
+#include <Audio.h>
+#include "arm_math.h"
+#include <si5351.h>
+#include <TimeLib.h>
+#include <RA8876_t3.h>
+
 extern int FT_8_counter;
 extern int ft8_marker;
 extern int WF_counter;
@@ -29,5 +35,6 @@ extern int target_slot;
 extern q15_t __attribute__((aligned(4))) dsp_buffer[];
 extern q15_t __attribute__((aligned(4))) dsp_output[];
 
-void display_messages(int decoded_messages);
+//void display_messages(int decoded_messages);
+void tx_display_update(void);
 time_t getTeensy3Time(void);
