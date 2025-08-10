@@ -49,104 +49,6 @@ char ft8_time_string[9] = "15:44:15";
 int left_hand_message = 300;
 char xmit_messages[3][MESSAGE_SIZE];
 
-static int in_range(int num, int min, int max)
-{
-  if (num < min)
-    return min;
-  if (num > max)
-    return max;
-  return num;
-}
-
-void compose_messages(void)
-{
-  const char seventy_three[] = "RR73";
-  const char blank[] = "                  ";
-
-  char RSL[5];
-  itoa(in_range(Target_RSL, -999, 9999), RSL, 10);
-
-  strcpy(xmit_messages[0], blank);
-  sprintf(xmit_messages[0], "%s %s %s", Target_Call, Station_Call, Short_Station_Locator);
-  strcpy(xmit_messages[1], blank);
-  sprintf(xmit_messages[1], "%s %s R%s", Target_Call, Station_Call, RSL);
-  strcpy(xmit_messages[2], blank);
-  sprintf(xmit_messages[2], "%s %s %s", Target_Call, Station_Call, seventy_three);
-
-  tft.fillRect(left_hand_message, 520, 240, 20, BLACK);
-  tft.setFontSize(2, true);
-  tft.textColor(WHITE, BLACK);
-
-  tft.setCursor(left_hand_message, 520);
-  tft.write(xmit_messages[0], 18);
-}
-
-void que_message(int index)
-{
-  uint8_t packed[K_BYTES];
-
-  pack77(xmit_messages[index], packed);
-  genft8(packed, tones);
-
-  tft.setFontSize(2, true);
-  tft.textColor(WHITE, BLACK);
-
-  tft.setCursor(left_hand_message, 520);
-  tft.write(xmit_messages[index], 19);
-
-  strcpy(current_message, xmit_messages[index]);
-
-  if (index == 2 && Station_RSL != 99)
-    write_ADIF_Log();
-}
-
-void set_reply(ReplyID replyId)
-{
-  uint8_t packed[K_BYTES];
-  char RSL[5];
-
-  switch (replyId)
-  {
-  case Reply_RSL:
-  case Reply_R_RSL:
-    // compute the RSL for use by the next 'switch'
-    itoa(in_range(Target_RSL, -999, 9999), RSL, 10);
-    break;
-  case Reply_Beacon_73:
-    sprintf(reply_message, "%s %s %s", Target_Call, Station_Call, Beacon_73);
-    break;
-  case Reply_QSO_73:
-    sprintf(reply_message, "%s %s %s", Target_Call, Station_Call, QSO_73);
-    break;
-  }
-
-  switch (replyId)
-  {
-  case Reply_RSL:
-    sprintf(reply_message, "%s %s %s", Target_Call, Station_Call, RSL);
-    break;
-  case Reply_R_RSL:
-    sprintf(reply_message, "%s %s R%s", Target_Call, Station_Call, RSL);
-    break;
-  case Reply_Beacon_73:
-    break;
-  case Reply_QSO_73:
-    break;
-  }
-
-  strcpy(current_message, reply_message);
-  update_message_log_display(1);
-
-  pack77(reply_message, packed);
-  genft8(packed, tones);
-
-  clear_xmit_messages();
-
-  tft.setFontSize(2, true);
-  tft.textColor(WHITE, BLACK);
-  tft.setCursor(left_hand_message, 520);
-  tft.write(reply_message, 18);
-}
 
 void clear_reply_message_box(void)
 {
@@ -155,61 +57,6 @@ void clear_reply_message_box(void)
 
 char Free_Text1[MESSAGE_SIZE] = "FreeText 1   ";
 char Free_Text2[MESSAGE_SIZE] = "FreeText 2   ";
-
-void set_cq(void)
-{
-  const char CQ[] = "CQ";
-  char CQ_message[20] = "                   ";
-  uint8_t packed[K_BYTES];
-
-  if (Free_Index == 0)
-  {
-    const char *mode = NULL;
-    switch (CQ_Mode_Index)
-    {
-    case 1:
-      mode = SOTA;
-      break;
-    case 2:
-      mode = POTA;
-      break;
-    case 3:
-      mode = QRP;
-      break;
-    }
-
-    if (mode == NULL)
-    {
-      sprintf(CQ_message, "%s %s %s", CQ, Station_Call, Short_Station_Locator);
-    }
-    else
-    {
-      sprintf(CQ_message, "%s %s %s %s", CQ, mode, Station_Call, Short_Station_Locator);
-    }
-  }
-  else
-  {
-    switch (Free_Index)
-    {
-    case 1:
-      strcpy(CQ_message, Free_Text1);
-      break;
-    case 2:
-      strcpy(CQ_message, Free_Text2);
-      break;
-    }
-  }
-
-  pack77(CQ_message, packed);
-  genft8(packed, tones);
-
-  erase_CQ();
-
-  tft.setFontSize(2, true);
-  tft.textColor(WHITE, BLACK);
-  tft.setCursor(left_hand_message, 520);
-  tft.write(CQ_message, 18);
-}
 
 void erase_CQ(void)
 {
@@ -220,11 +67,14 @@ void erase_CQ(void)
   tft.write(CQ_message, 18);
 }
 
-void clear_xmit_messages(void)
-{
-  char xmit_message[] = "                  ";
 
-  tft.setFontSize(2, true);
-  tft.setCursor(left_hand_message, 520);
-  tft.write(xmit_message, 18);
+// Needed by autoseq_engine
+void queue_custom_text(const char *tx_msg)
+{
+	uint8_t packed[K_BYTES];
+
+	pack77(tx_msg, packed);
+	genft8(packed, tones);
+
 }
+

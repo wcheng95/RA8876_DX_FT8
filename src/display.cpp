@@ -13,14 +13,16 @@
 #include "main.h"
 #include "gen_ft8.h"
 #include "ini.h"
+#include "autoseq_engine.h"
 
 File stationData_File;
 
-static const int max_log_messages = 10;
-static int old_rtc_hour = -1;
-
+static const int max_log_messages = 9;
+extern int  log_display_flag;
 display_message_details log_messages[max_log_messages];
-char current_message[40];
+char current_message[22];
+
+static int old_rtc_hour = -1;
 
 void display_value(int x, int y, int value)
 {
@@ -270,7 +272,7 @@ void display_revision_level(void)
   tft.write("Hardware: V3.0", 14);
 
   tft.setCursor(0, 160);
-  tft.write("Firmware: V1.0", 14);
+  tft.write("Firmware: V1.3", 14);
 
   tft.setCursor(0, 190);
   tft.write("W5BAA - WB2CBA", 14);
@@ -289,6 +291,11 @@ void display_revision_level(void)
   tft.write("Gears & Pulleys", 15);
   tft.setCursor(0, 330);
   tft.write("Are Aligned", 12);
+
+  delay (1000);
+
+  tft.fillRect(0, 100, 300, 400, BLACK);
+
 }
 
 void show_decimal(uint16_t x, uint16_t y, float variable)
@@ -309,13 +316,6 @@ void show_decimal(uint16_t x, uint16_t y, float variable)
   tft.write(str, 8);
 }
 
-void clear_log_messages(void)
-{
-  const char blank[] = "                  ";
-
-  for (int i = 0; i < max_log_messages; i++)
-    strcpy(log_messages[i].message, blank);
-}
 
 void Be_Patient(void)
 {
@@ -350,7 +350,14 @@ void update_message_log_display(int mode)
     log_messages[max_log_messages - 1].text_color = 0;
   }
 
-  tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
+  log_display_flag = 1;
+
+  }
+
+void display_logged_messages(void){
+
+ // tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
+  tft.fillRect(START_X_RIGHT, 140, 260, 400, BLACK);
   tft.setFontSize(2, true);
 
   for (int i = 0; i < max_log_messages; i++)
@@ -360,7 +367,8 @@ void update_message_log_display(int mode)
     else
       tft.textColor(RED, BLACK);
 
-    tft.setCursor(left_hand_message, 100 + i * 40);
+    tft.setCursor(START_X_RIGHT, 180 + i * 40);
     tft.write(log_messages[i].message, 18);
   }
+
 }

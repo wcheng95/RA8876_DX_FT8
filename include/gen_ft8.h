@@ -26,10 +26,6 @@ enum QueID
     Que_Size
 };
 
-void set_reply(ReplyID replyId);
-void set_cq(void);
-void compose_messages(void);
-void que_message(int index);
 void clear_reply_message_box(void);
 void erase_CQ(void);
 void clear_xmit_messages(void);
@@ -46,5 +42,7 @@ extern char Target_Locator[7]; // four character locator  + /0
 extern char Free_Text1[MESSAGE_SIZE];
 extern char Free_Text2[MESSAGE_SIZE];
 extern int left_hand_message;
+
+void queue_custom_text(const char *tx_msg);
 
 #endif /* GEN_FT8_H_ */

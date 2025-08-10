@@ -14,6 +14,5 @@ void ft8_transmit_sequence(void);
 void terminate_QSO(void);
 void set_Rcvr_Freq(void);
 
-extern int RR73_sent;
-extern int RSL_sent;
+
 

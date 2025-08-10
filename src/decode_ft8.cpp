@@ -32,8 +32,9 @@
 #include "traffic_manager.h"
 #include "Geodesy.h"
 #include "PskInterface.h"
+#include "autoseq_engine.h"
 
-char blank[27] = "                          ";
+
 int blank_length = 26;
 
 const int kLDPC_iterations = 20;
@@ -43,13 +44,12 @@ size_t kMax_message_length = 20;
 const int kMin_score = 40; // Minimum sync score threshold for candidates
 
 display_message_details display[10];
-
 Decode new_decoded[20];
 
-Calling_Station Answer_CQ[100];
-int log_size = 50;
-
-static int num_calls; // number of unique calling stations
+static const char *blank = "                  "; // 18 spaces
+static char worked_qso_entries[MAX_QSO_ENTRIES][MAX_LINE_LEN] = {};
+static int num_qsos = 0;
+extern int was_txing;
 
 int message_limit = 10;
 
@@ -99,14 +99,14 @@ int ft8_decode(void)
 
     char message[kMax_message_length];
 
-    char field1[14];
-    char field2[14];
-    char field3[7];
-    int rc = unpack77_fields(a91, field1, field2, field3);
+     char call_to[14];
+    char call_from[14];
+    char locator[7];
+    int rc = unpack77_fields(a91, call_to, call_from, locator);
     if (rc < 0)
       continue;
 
-    sprintf(message, "%s %s %s ", field1, field2, field3);
+    sprintf(message, "%s %s %s ", call_to, call_from, locator);
 
     // Check for duplicate messages (TODO: use hashing)
     bool found = false;
@@ -135,52 +135,46 @@ int ft8_decode(void)
 
         new_decoded[num_decoded].sync_score = cand.score;
         new_decoded[num_decoded].freq_hz = (int)freq_hz;
-        strcpy(new_decoded[num_decoded].field1, field1);
-        strcpy(new_decoded[num_decoded].field2, field2);
-        strcpy(new_decoded[num_decoded].field3, field3);
+        strcpy(new_decoded[num_decoded].call_to, call_to);
+        strcpy(new_decoded[num_decoded].call_from, call_from);
+        strcpy(new_decoded[num_decoded].locator, locator);
         strcpy(new_decoded[num_decoded].decode_time, rtc_string);
 
         new_decoded[num_decoded].slot = slot_state;
 
         raw_RSL = (float)cand.score;
-        display_RSL = (int)((raw_RSL - 160)) / 6;
+        display_RSL = (int)((raw_RSL - 248)) / 8;
         new_decoded[num_decoded].snr = display_RSL;
 
-        char Test_Locator[7];
-        strcpy(Test_Locator, new_decoded[num_decoded].field3);
-        if (IsValidLocator(Test_Locator))
-        {
-          strcpy(new_decoded[num_decoded].target_locator, Test_Locator);
-          new_decoded[num_decoded].sequence = Seq_Locator;
-        }
+        new_decoded[num_decoded].sequence = Seq_RSL;
 
-        char FT8_Message[7];
-        strcpy(FT8_Message, new_decoded[num_decoded].field3);
-        if (strindex(FT8_Message, "73") >= 0 || strindex(FT8_Message, "RR73") >= 0 || strindex(FT8_Message, "RRR") >= 0)
+        if (IsValidLocator(locator))
         {
-          new_decoded[num_decoded].RR73 = 1;
+          strcpy(new_decoded[num_decoded].target_locator, locator);
+          new_decoded[num_decoded].sequence = Seq_Locator;
         }
         else
         {
-          if (FT8_Message[0] == 82)
-          {
-            FT8_Message[0] = 32;
-            new_decoded[num_decoded].RR73 = 2; // chh_traffuc
-            new_decoded[num_decoded].sequence = Seq_Locator;
-          }
+         					const char *ptr = locator;
+					if (*ptr == 'R')
+					{
+						ptr++;
+					}
 
-          received_RSL = atoi(FT8_Message);
-          if (received_RSL < 30) // Prevents an 73 being decoded as a received RSL
-          {
-            new_decoded[num_decoded].received_snr = received_RSL;
-          }
+					received_RSL = atoi(ptr);
+					if (received_RSL < 30) // Prevents an 73 being decoded as a received RSL
+					{
+						new_decoded[num_decoded].received_snr = received_RSL;
+					}
         }
 
+
+
         // ignore hashed callsigns
-        if (*field2 != '<')
+        if (*call_from != '<')
         {
         	uint32_t frequency = (sBand_Data[BandIndex].Frequency * 1000) + new_decoded[num_decoded].freq_hz;
-          addReceivedRecord(field2, frequency, display_RSL);
+          addReceivedRecord(call_from, frequency, display_RSL);
         }
         ++num_decoded;
       }
@@ -190,48 +184,7 @@ int ft8_decode(void)
   return num_decoded;
 }
 
-void display_messages(int decoded_messages)
-{
-  const char CQ[] = "CQ";
-  const char blank[] = "                  ";
 
-  tft.fillRect(0, 100, 300, 400, BLACK);
-
-  for (int i = 0; i < decoded_messages && i < message_limit; i++)
-  {
-    strcpy(display[i].message, blank);
-
-    if (strcmp(CQ, new_decoded[i].field1) == 0)
-    {
-
-      if (strcmp(Station_Call, new_decoded[i].field2) != 0)
-      {
-        sprintf(display[i].message, "%s %s %s %2i", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3, new_decoded[i].snr);
-      }
-      else
-        sprintf(display[i].message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
-      display[i].text_color = 1;
-    }
-
-    else
-    {
-      sprintf(display[i].message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
-      display[i].text_color = 0;
-    }
-
-    tft.setFontSize(2, true);
-
-    for (int j = 0; j < decoded_messages && j < message_limit; j++)
-    {
-      if (display[j].text_color == 0)
-        tft.textColor(WHITE, BLACK);
-      else
-        tft.textColor(GREEN, BLACK);
-      tft.setCursor(0, 100 + j * 40);
-      tft.write(display[j].message, 18);
-    }
-  }
-}
 
 int strindex(const char *s, const char *t)
 {
@@ -241,168 +194,12 @@ int strindex(const char *s, const char *t)
 
   for (i = 0; s[i] != '\0'; i++)
   {
-    for (j = i, k = 0; t[k] != '\0' && s[j] == t[k]; j++, k++)
-      ;
+    for (j = i, k = 0; t[k] != '\0' && s[j] == t[k]; j++, k++);
+
     if (k > 0 && t[k] == '\0')
       result = i;
   }
   return result;
-}
-
-void clear_log_stored_data(void)
-{
-  const char call_blank[] = "       ";
-  const char locator_blank[] = "    ";
-
-  for (int i = 0; i < log_size; i++)
-  {
-    Answer_CQ[i].number_times_called = 0;
-    strcpy(Answer_CQ[i].call, call_blank);
-    strcpy(Answer_CQ[i].locator, locator_blank);
-    Answer_CQ[i].RSL = 0;
-    Answer_CQ[i].RR73 = 0;
-    Answer_CQ[i].received_RSL = 99;
-    Answer_CQ[i].sequence = Seq_RSL;
-  }
-}
-
-void clear_decoded_messages(void)
-{
-  const char call_blank[] = "       ";
-  const char locator_blank[] = "    ";
-
-  for (int i = 0; i < kMax_decoded_messages; i++)
-  {
-    strcpy(new_decoded[i].field1, call_blank);
-    strcpy(new_decoded[i].field2, call_blank);
-    strcpy(new_decoded[i].field3, locator_blank);
-    strcpy(new_decoded[i].target_locator, locator_blank);
-    new_decoded[i].freq_hz = 0;
-    new_decoded[i].sync_score = 0;
-    new_decoded[i].received_snr = 99;
-    new_decoded[i].slot = 0;
-    new_decoded[i].RR73 = 0;
-    new_decoded[i].sequence = Seq_RSL;
-  }
-}
-
-int Check_Calling_Stations(int num_decoded)
-{
-  int Beacon_Reply_Status = 0;
-  char received_message[40];
-
-  for (int i = 0; i < num_decoded; i++)
-  { // check to see if being called
-    int old_call;
-    int old_call_address = 0;
-
-    if (strindex(new_decoded[i].field1, Station_Call) >= 0)
-    {
-      old_call = 0;
-
-      for (int j = 0; j < num_calls; j++)
-      {
-        if (strcmp(Answer_CQ[j].call, new_decoded[i].field2) == 0)
-        {
-          old_call = Answer_CQ[j].number_times_called;
-          old_call++;
-          Answer_CQ[j].number_times_called = old_call;
-          old_call_address = j;
-        }
-      }
-
-      if (old_call == 0)
-      {
-        sprintf(received_message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
-        strcpy(current_message, received_message);
-
-        update_message_log_display(0);
-
-        strcpy(Target_Call, new_decoded[i].field2);
-
-        if (Beacon_On)
-          Target_RSL = new_decoded[i].snr;
-
-        strcpy(Target_Locator, new_decoded[i].target_locator);
-
-        if (new_decoded[i].received_snr != 99)
-          Station_RSL = new_decoded[i].received_snr;
-
-        if (Beacon_On) // migration
-        {
-          if (new_decoded[i].sequence == Seq_Locator)
-            set_reply(Reply_RSL);
-          else
-            set_reply(Reply_R_RSL);
-        }
-
-        Beacon_Reply_Status = 1;
-
-        strcpy(Answer_CQ[num_calls].call, new_decoded[i].field2);
-        strcpy(Answer_CQ[num_calls].locator, new_decoded[i].target_locator);
-        Answer_CQ[num_calls].RSL = Target_RSL;
-        Answer_CQ[num_calls].received_RSL = Station_RSL;
-        Answer_CQ[num_calls].sequence = new_decoded[i].sequence;
-
-        num_calls++;
-        break;
-      }
-
-      if (old_call >= 1 && old_call < 5)
-      {
-        sprintf(received_message, "%s %s %s", new_decoded[i].field1, new_decoded[i].field2, new_decoded[i].field3);
-        strcpy(current_message, received_message);
-        update_message_log_display(0);
-
-        if (new_decoded[i].RR73)
-          RR73_sent = 1;
-
-        strcpy(Target_Call, Answer_CQ[old_call_address].call);
-        strcpy(Target_Locator, Answer_CQ[old_call_address].locator);
-        Target_RSL = Answer_CQ[old_call_address].RSL;
-
-        if (new_decoded[i].received_snr != 99)
-          Answer_CQ[old_call_address].received_RSL = new_decoded[i].received_snr;
-
-        Station_RSL = Answer_CQ[old_call_address].received_RSL;
-
-        if (!Answer_CQ[old_call_address].RR73)
-        {
-          if (Beacon_On)
-          {
-            if (new_decoded[i].RR73 > 0)
-            {
-              if (Answer_CQ[old_call_address].sequence == Seq_Locator)
-                // if this is a  locator response send Beacon 73
-                set_reply(Reply_Beacon_73);
-              else
-                // if this is a RSL response send QSO 73
-                set_reply(Reply_QSO_73);
-
-              if (new_decoded[i].RR73)
-              {
-                Answer_CQ[old_call_address].RR73 = 1;
-                write_ADIF_Log();
-              }
-            }
-            else
-            {
-              if (Answer_CQ[old_call_address].sequence == Seq_Locator)
-                // if this is a  locator response send RSL
-                set_reply(Reply_RSL);
-              else
-                // if this is a RSL response send R_RSL
-                set_reply(Reply_R_RSL);
-            }
-          }
-
-          Beacon_Reply_Status = 1;
-        } // Check for RR73 =1
-      } // check for old call
-    } // check for station call
-  } // check to see if being called
-
-  return Beacon_Reply_Status;
 }
 
 void set_QSO_Xmit_Freq(int freq)
@@ -419,7 +216,7 @@ void process_selected_Station(int stations_decoded, int TouchIndex)
 {
   if (stations_decoded > 0 && TouchIndex <= stations_decoded)
   {
-    strcpy(Target_Call, new_decoded[TouchIndex].field2);
+    strcpy(Target_Call, new_decoded[TouchIndex].call_from);
     strcpy(Target_Locator, new_decoded[TouchIndex].target_locator);
 
     Target_RSL = new_decoded[TouchIndex].snr;
@@ -428,12 +225,118 @@ void process_selected_Station(int stations_decoded, int TouchIndex)
 
     if (QSO_Fix)
       set_QSO_Xmit_Freq(target_freq);
-
-    compose_messages();
-    Auto_QSO_State = 1;
-    RSL_sent = 0;
-    RR73_sent = 0;
   }
 
   FT8_Touch_Flag = 0;
+}
+
+void display_messages(Decode new_decoded[], int decoded_messages)
+{
+	clear_rx_region();
+
+	for (int i = 0; i < decoded_messages && i < MAX_RX_ROWS; i++)
+	{
+		const char *call_to = new_decoded[i].call_to;
+		const char *call_from = new_decoded[i].call_from;
+		const char *locator = new_decoded[i].locator;
+
+    char message[MAX_MSG_LEN];
+    snprintf(message, MAX_LINE_LEN, "%s %s %s", call_to, call_from, locator);
+    message[MAX_LINE_LEN] = '\0'; // Make sure it fits the display region
+    MsgColor color = White;
+		if (strcmp(call_to, "CQ") == 0 || strncmp(call_to, "CQ ", 3) == 0)
+		{
+			color = Green;
+		}
+		// Addressed me
+		if (strncmp(call_to, Station_Call, CALLSIGN_SIZE) == 0)
+		{
+			color = Red;
+		}
+		// Mark own TX in yellow (WSJT-X)
+		if (was_txing) {
+			color = Yellow;
+		}
+    display_line(false, i, Black, color, message);
+	}
+}
+
+void display_line(     bool right,    int line,    MsgColor background,    MsgColor textcolor,    const char *text)
+{
+    tft.setFontSize(2, true);
+    tft.textColor(lcd_color_map[textcolor], lcd_color_map[background]);
+    tft.setCursor(right ? START_X_RIGHT : START_X_LEFT, START_Y + line * LINE_HT);
+    tft.write((const uint8_t *)text, strlen(text));
+}
+
+void clear_rx_region(void)
+{
+    for (int i = 0; i < MAX_RX_ROWS; i++) {
+        display_line(false, i, Black, Black, blank);
+    }
+}
+
+void clear_qso_region(void)
+{
+    for (int i = 0; i < MAX_QSO_ROWS; i++) {
+        display_line(true, i, Black, Black, blank);
+    }
+}
+
+void display_queued_message(const char* msg)
+{
+    display_line(true, 0, Black, Black, blank);
+    display_line(true, 0, Black, Red, msg);
+}
+
+void display_txing_message(const char*msg)
+{
+    display_line(true, 0, Red, Black, blank);
+    display_line(true, 0, Red, White, msg);
+}
+
+void display_qso_state(const char *txt)
+{
+    display_line(true, 1, Black, Black, blank);
+    display_line(true, 1, Black, White, txt);
+}
+
+char * add_worked_qso(void) {
+    // Handle circular buffer overflow - use modulo for array indexing
+    int entry_index = num_qsos % MAX_QSO_ENTRIES;
+    num_qsos++;
+    return worked_qso_entries[entry_index];
+}
+
+bool display_worked_qsos(void)
+{
+    // Display in pages
+    // pi is page index
+    static int pi = 0;
+    
+    // Determine how many entries to show (max 100)
+    int total_entries = num_qsos < MAX_QSO_ENTRIES ? num_qsos : MAX_QSO_ENTRIES;
+    
+    if (pi * MAX_QSO_ROWS > total_entries) {
+        pi = 0;
+        return false;
+    }
+    
+    // Clear the entire log region first
+    clear_qso_region();
+    
+    // Display the log in reverse order (most recent first)
+    for (int ri = 0; ri < MAX_QSO_ROWS && (pi * MAX_QSO_ROWS + ri) < total_entries; ++ri)
+    {
+        // Calculate the QSO index in reverse chronological order
+        int paging_offset = pi * MAX_QSO_ROWS + ri;
+        int qso_index = num_qsos - 1 - paging_offset;
+        
+        // Get the actual array index using modulo for circular buffer
+        int array_index = qso_index % MAX_QSO_ENTRIES;
+        
+        display_line(true, ri, Black, Green, worked_qso_entries[array_index]);
+    }
+    ++pi;
+    return true;
 }

@@ -18,6 +18,7 @@
 #include "main.h"
 #include "Maps.h"
 #include "PskInterface.h"
+#include "autoseq_engine.h"
 
 #define Board_PIN 2
 #define Relay_PIN 3
@@ -68,6 +69,10 @@ int CQ_Mode_Index;
 int Free_Index;
 
 int Map_Index;
+extern bool clr_pressed;
+extern bool free_text;
+extern bool tx_pressed;
+int Skip_Tx1;
 
 #define numButtons 23
 #define button_height 100
@@ -489,15 +494,8 @@ void executeButton(uint16_t index)
     drawButton(0);
     delay(40);
 
-    clear_xmit_messages();
-    terminate_QSO();
-    Auto_QSO_State = 0;
-    QSO_xmit = 0;
-    clear_reply_message_box();
-    clear_log_stored_data();
-    clear_log_messages();
+    clr_pressed = true;
 
-    erase_CQ();
     sButtonData[0].state = 0;
     drawButton(0);
 
@@ -508,16 +506,11 @@ void executeButton(uint16_t index)
     {
       Beacon_On = 0;
       Beacon_State = 0;
-      clear_reply_message_box();
-      clear_log_messages();
-      clear_log_stored_data();
+
     }
     else
     {
       Beacon_On = 1;
-      clear_reply_message_box();
-      clear_log_stored_data();
-      clear_log_messages();
       Beacon_State = 1;
     }
 
@@ -527,11 +520,7 @@ void executeButton(uint16_t index)
   case 2:
     if (!sButtonData[2].state)
     {
-      tune_Off_sequence();
       Tune_On = 0;
-      Arm_Tune = 0;
-      xmit_flag = 0;
-      receive_sequence();
       erase_Cal_Display();
       delay(5);
     }
@@ -569,7 +558,7 @@ void executeButton(uint16_t index)
     else
     {
       Auto_Sync = 1;
-      Be_Patient();
+      //Be_Patient();
     }
     break;
 
@@ -963,6 +952,7 @@ void process_touch(void)
     FT8_Message_Touch = Xmit_message_Touch();
     check_WF_Touch();
     touch_count = 0;
+    if( !Tune_On &&  (draw_x > START_X_RIGHT  && draw_y > 120 && draw_y < 400) ) tx_pressed = true;
   }
 }
 
@@ -973,14 +963,22 @@ void setup_Cal_Display(void)
   tft.fillRect(0, 100, 600, 439, BLACK);
   erase_CQ();
 
-  for (int id = 11; id < 14; id++)
-  {
-    drawButton(id);
-    sButtonData[id].Active = 3;
-  }
-
+  sButtonData[11].Active = 3;
+  sButtonData[12].Active = 3;
+  sButtonData[13].Active = 3;
   sButtonData[14].Active = 1;
-  drawButton(14);
+  sButtonData[15].Active = 3;
+  sButtonData[16].Active = 3;
+  sButtonData[17].Active = 3;
+  sButtonData[18].Active = 3;
+  sButtonData[19].Active = 3;
+  sButtonData[20].Active = 3;
+  sButtonData[21].Active = 3;
+  sButtonData[22].Active = 3;
+
+  for (int i = 11; i < 23; i++)
+    drawButton(i);
+
 
   for (int id = 15; id < 23; id++)
   {
