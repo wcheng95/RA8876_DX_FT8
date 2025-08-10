@@ -13,7 +13,6 @@ void show_wide(uint16_t x, uint16_t y, int variable);
 bool open_stationData_file(void);
 void update_message_log_display(int mode);
 void display_logged_messages(void);
-void clear_log_messages(void);
 void Be_Patient(void);
 void display_revision_level(void);
 

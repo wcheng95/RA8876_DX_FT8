@@ -45,7 +45,6 @@ struct Calling_Station
     char locator[7];
     int RSL;
     int received_RSL;
-    int RR73;
     Sequence sequence;
 };
 
@@ -76,10 +75,6 @@ int Check_Calling_Stations(int num_decoded);
 
 void process_selected_Station(int stations_decoded, int TouchIndex);
 
-void clear_decoded_messages(void);
-void clear_log_stored_data(void);
-
-
 void display_line(     bool right,    int line,    MsgColor background,    MsgColor textcolor,    const char *text);
 void display_messages(Decode new_decoded[], int decoded_messages);
 void clear_rx_region(void);
@@ -87,7 +82,7 @@ void clear_qso_region(void);
 void display_queued_message(const char* msg);
 void display_txing_message(const char*msg);
 void display_qso_state(const char *txt);
-char * add_worked_qso(void);
+char *add_worked_qso(void);
 bool display_worked_qsos(void);
 
 int strindex(const char *s, const char *t);

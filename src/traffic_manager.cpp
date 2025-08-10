@@ -11,10 +11,6 @@
 
 #define FT8_TONE_SPACING 625
 
-int RSL_sent;
-int QSO_xmit_count;
-int RR73_sent;
-
 uint64_t F_Long, F_FT8, F_Receive;
 
 static void set_Xmit_Freq(void)

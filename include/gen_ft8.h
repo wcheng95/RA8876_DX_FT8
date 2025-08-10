@@ -26,10 +26,6 @@ enum QueID
     Que_Size
 };
 
-void set_reply(ReplyID replyId);
-void set_cq(void);
-void compose_messages(void);
-void que_message(int index);
 void clear_reply_message_box(void);
 void erase_CQ(void);
 void clear_xmit_messages(void);

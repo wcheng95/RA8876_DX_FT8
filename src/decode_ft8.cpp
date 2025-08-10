@@ -44,13 +44,7 @@ size_t kMax_message_length = 20;
 const int kMin_score = 40; // Minimum sync score threshold for candidates
 
 display_message_details display[10];
-
 Decode new_decoded[20];
-
-//Calling_Station Answer_CQ[100];
-//int log_size = 50;
-
-//static int num_calls; // number of unique calling stations
 
 static const char *blank = "                  "; // 18 spaces
 static char worked_qso_entries[MAX_QSO_ENTRIES][MAX_LINE_LEN] = {};
@@ -200,14 +194,13 @@ int strindex(const char *s, const char *t)
 
   for (i = 0; s[i] != '\0'; i++)
   {
-    for (j = i, k = 0; t[k] != '\0' && s[j] == t[k]; j++, k++)
-      ;
+    for (j = i, k = 0; t[k] != '\0' && s[j] == t[k]; j++, k++);
+
     if (k > 0 && t[k] == '\0')
       result = i;
   }
   return result;
 }
-
 
 void set_QSO_Xmit_Freq(int freq)
 {
@@ -232,14 +225,10 @@ void process_selected_Station(int stations_decoded, int TouchIndex)
 
     if (QSO_Fix)
       set_QSO_Xmit_Freq(target_freq);
-
   }
 
   FT8_Touch_Flag = 0;
 }
-
-
-
 
 void display_messages(Decode new_decoded[], int decoded_messages)
 {
@@ -271,7 +260,6 @@ void display_messages(Decode new_decoded[], int decoded_messages)
     display_line(false, i, Black, color, message);
 	}
 }
-
 
 void display_line(     bool right,    int line,    MsgColor background,    MsgColor textcolor,    const char *text)
 {

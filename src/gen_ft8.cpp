@@ -49,20 +49,6 @@ char ft8_time_string[9] = "15:44:15";
 int left_hand_message = 300;
 char xmit_messages[3][MESSAGE_SIZE];
 
-static int in_range(int num, int min, int max)
-{
-  if (num < min)
-    return min;
-  if (num > max)
-    return max;
-  return num;
-}
-
-
-
-
-
-
 
 void clear_reply_message_box(void)
 {
@@ -72,7 +58,6 @@ void clear_reply_message_box(void)
 char Free_Text1[MESSAGE_SIZE] = "FreeText 1   ";
 char Free_Text2[MESSAGE_SIZE] = "FreeText 2   ";
 
-
 void erase_CQ(void)
 {
   char CQ_message[] = "                  ";
@@ -81,7 +66,6 @@ void erase_CQ(void)
   tft.setCursor(left_hand_message, 520);
   tft.write(CQ_message, 18);
 }
-
 
 
 // Needed by autoseq_engine

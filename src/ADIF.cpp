@@ -342,11 +342,8 @@ void write_ADIF_Log()
   }
 }
 
-
-
 static void draw_QTH(void)
 {
-
   QTH_Distance = Map_Distance(Station_Locator);
   QTH_Bearing = Map_Bearing(Station_Locator);
 

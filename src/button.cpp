@@ -18,6 +18,7 @@
 #include "main.h"
 #include "Maps.h"
 #include "PskInterface.h"
+#include "autoseq_engine.h"
 
 #define Board_PIN 2
 #define Relay_PIN 3
@@ -951,6 +952,7 @@ void process_touch(void)
     FT8_Message_Touch = Xmit_message_Touch();
     check_WF_Touch();
     touch_count = 0;
+    if( !Tune_On &&  (draw_x > START_X_RIGHT  && draw_y > 120 && draw_y < 400) ) tx_pressed = true;
   }
 }
 

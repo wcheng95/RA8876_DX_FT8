@@ -316,13 +316,6 @@ void show_decimal(uint16_t x, uint16_t y, float variable)
   tft.write(str, 8);
 }
 
-void clear_log_messages(void)
-{
-  const char blank[] = "                  ";
-
-  for (int i = 0; i < max_log_messages; i++)
-    strcpy(log_messages[i].message, blank);
-}
 
 void Be_Patient(void)
 {

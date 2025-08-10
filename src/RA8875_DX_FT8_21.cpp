@@ -31,9 +31,6 @@
 #include "PskInterface.h"
 #include "autoseq_engine.h"
 #include "ADIF.h"
-#include "PskInterface.h"
-
-
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
@@ -42,7 +39,7 @@
 #define BACKLITE 6 // My copy of the display is set for external backlight control
 #define CTP_INT 27 // Use an interrupt capable pin such as pin 2 (any pin on a Teensy)
 
-#define MAXTOUCHLIMIT 1
+#define MAXTOUCHLIMIT 10
 
 // Used for skipping the TX slot
 int was_txing = 0;
@@ -253,7 +250,7 @@ void setup(void)
   Init_Log_File();
   draw_map(Map_Index);
 
-   autoseq_init(Station_Call, Station_Locator);
+  autoseq_init(Station_Call, Station_Locator);
 
 }
 
@@ -308,7 +305,6 @@ void loop()
         }
       }
 
-
     if (!was_txing) {
 				for (int i = 0; i < master_decoded; i++)
 				{
@@ -325,9 +321,6 @@ void loop()
 						}
 					}
 				}
-
-
-
 
 				// No valid response has received to advance auto sequencing.
 				// Check TX retry is needed?
@@ -360,10 +353,7 @@ void loop()
 
   }  //end of sevicing FT_Decode
 
-
-
   process_touch();
-
 
   if (clr_pressed) {
 			terminate_QSO();
@@ -467,20 +457,15 @@ void update_synchronization()
 		// Partial TX, set the TX counter based on current ft8_time
 		ft8_xmit_counter = (ft8_time % 15000) / 160; // 160ms per symbol
     
-    
 		// Log the TX
     if  ( strindex(autoseq_txbuf, "CQ") < 0) {
     strcpy(current_message, autoseq_txbuf);
     update_message_log_display(1);
     }
     
-    
 		tx_display_update();
 	}
 }
-
-
-
 
 void sync_FT8(void)
 {
