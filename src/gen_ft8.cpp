@@ -35,20 +35,7 @@ char Target_Locator[7]; // six character locator  + /0
 int Target_RSL;         // four character RSL  + /0
 int Station_RSL;
 
-const char Beacon_73[] = "RR73";
-const char QSO_73[] = "73";
-char reply_message[MESSAGE_SIZE];
-
-const char CQ[] = "CQ";
-const char SOTA[] = "SOTA";
-const char POTA[] = "POTA";
-const char QRP[] = "QRP";
-char display_message[26];
-
-char ft8_time_string[9] = "15:44:15";
-int left_hand_message = 300;
-char xmit_messages[3][MESSAGE_SIZE];
-
+const int left_hand_message = 300;
 
 void clear_reply_message_box(void)
 {
@@ -58,23 +45,21 @@ void clear_reply_message_box(void)
 char Free_Text1[MESSAGE_SIZE] = "FreeText 1   ";
 char Free_Text2[MESSAGE_SIZE] = "FreeText 2   ";
 
+static const char CQ_message[] = "                  ";
+
 void erase_CQ(void)
 {
-  char CQ_message[] = "                  ";
   tft.setFontSize(2, true);
   tft.textColor(BLACK, BLACK);
   tft.setCursor(left_hand_message, 520);
   tft.write(CQ_message, 18);
 }
 
-
 // Needed by autoseq_engine
 void queue_custom_text(const char *tx_msg)
 {
-	uint8_t packed[K_BYTES];
+  uint8_t packed[K_BYTES];
 
-	pack77(tx_msg, packed);
-	genft8(packed, tones);
-
+  pack77(tx_msg, packed);
+  genft8(packed, tones);
 }
-

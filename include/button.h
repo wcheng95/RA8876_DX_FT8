@@ -89,6 +89,7 @@ extern int Free_Index;
 extern int CQ_Mode_Index;
 extern int QSO_Fix;
 extern int FT8_Touch_Flag;
+extern int Skip_Tx1;
 
 
 

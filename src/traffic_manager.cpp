@@ -11,7 +11,7 @@
 
 #define FT8_TONE_SPACING 625
 
-uint64_t F_Long, F_FT8, F_Receive;
+static uint64_t F_Long, F_FT8, F_Receive;
 
 static void set_Xmit_Freq(void)
 {
@@ -80,7 +80,6 @@ void terminate_QSO(void)
   receive_sequence();
   xmit_flag = 0;
 }
-
 
 void set_Rcvr_Freq(void)
 {

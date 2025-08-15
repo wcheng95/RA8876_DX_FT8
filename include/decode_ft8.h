@@ -90,5 +90,6 @@ int strindex(const char *s, const char *t);
 extern int Auto_QSO_State;
 extern struct Decode new_decoded[];
 extern size_t kMax_message_length;
+extern int was_txing;
 
 #endif /* DECODE_FT8_H_ */
