@@ -6,7 +6,7 @@ struct Map_Parameters
   int16_t index;
   const char *map_locator;
   int16_t map_width;
-  int16_t map_heigth;
+  int16_t map_height;
   int16_t map_center_x; // from left edge
   int16_t map_center_y;
   float map_scale;

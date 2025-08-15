@@ -18,7 +18,7 @@
 File stationData_File;
 
 static const int max_log_messages = 9;
-extern int  log_display_flag;
+extern int log_display_flag;
 display_message_details log_messages[max_log_messages];
 char current_message[22];
 
@@ -292,10 +292,9 @@ void display_revision_level(void)
   tft.setCursor(0, 330);
   tft.write("Are Aligned", 12);
 
-  delay (1000);
+  delay(1000);
 
   tft.fillRect(0, 100, 300, 400, BLACK);
-
 }
 
 void show_decimal(uint16_t x, uint16_t y, float variable)
@@ -315,7 +314,6 @@ void show_decimal(uint16_t x, uint16_t y, float variable)
   tft.setFontSize(2, true);
   tft.write(str, 8);
 }
-
 
 void Be_Patient(void)
 {
@@ -351,12 +349,10 @@ void update_message_log_display(int mode)
   }
 
   log_display_flag = 1;
+}
 
-  }
-
-void display_logged_messages(void){
-
- // tft.fillRect(left_hand_message, 100, 260, 400, BLACK);
+void display_logged_messages(void)
+{
   tft.fillRect(START_X_RIGHT, 140, 260, 400, BLACK);
   tft.setFontSize(2, true);
 
@@ -370,5 +366,4 @@ void display_logged_messages(void){
     tft.setCursor(START_X_RIGHT, 180 + i * 40);
     tft.write(log_messages[i].message, 18);
   }
-
 }

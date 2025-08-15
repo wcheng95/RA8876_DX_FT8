@@ -17,7 +17,7 @@ static int unpack28(uint32_t n28, uint8_t ip, uint8_t i3, char *result)
   {
     if (n28 <= 2)
     {
-      switch(n28)
+      switch (n28)
       {
       case 0:
         strcpy(result, "DE");
@@ -307,21 +307,21 @@ static int unpack_nonstandard(const uint8_t *a77, char *field1, char *field2,
   if (icq == 0)
   {
     strcpy(field1, trim(call_1));
-    switch(nrpt)
+    switch (nrpt)
     {
     case 0:
       strcpy(field3, "RRR");
-      break;      
-    case 1:
-      strcpy(field3, "RR73");     
       break;
-    case 2: 
+    case 1:
+      strcpy(field3, "RR73");
+      break;
+    case 2:
       strcpy(field3, "73");
-      break;    
-    case 3: 
+      break;
+    case 3:
       strcpy(field3, "RR");
       break;
-    default:  
+    default:
       field3[0] = 0;
       break;
     }

@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "decode_ft8.h"
 #include "main.h"
+#include "button.h"
 
 //#define MAX_MSG_LEN 40
 #define MAX_MSG_LEN 22
@@ -37,3 +38,5 @@ void autoseq_get_qso_state(char out_text[MAX_LINE_LEN]);
 
 /* === Slot timer / time‑out manager === */
 void autoseq_tick(void);
+
+

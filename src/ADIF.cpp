@@ -36,36 +36,29 @@ static const double EARTH_RAD = 6371; // radius in km
 #include "JM29_8000.h"  //the picture
 #include "JM29_16000.h" //the picture
 
-char log_rtc_date_string[9];
-char log_rtc_time_string[9];
+static char log_rtc_date_string[9];
+static char log_rtc_time_string[9];
 
-char file_name_string[24];
+static char file_name_string[24];
 
-char display_frequency[9];
-
-uint16_t scaled_distance;
-
-int ADIF_distance;
-int ADIF_map_distance;
-int ADIF_map_bearing;
+static int ADIF_distance;
+static int ADIF_map_distance;
+static int ADIF_map_bearing;
 
 static int16_t start_x;
 static int16_t start_y;
 static int16_t center_x;
 static int16_t center_y;
 
-int16_t map_width;
-int16_t map_heigth;
-int16_t map_center_x;
-int16_t map_center_y;
+static int16_t map_width;
+static int16_t map_height;
+static int16_t map_center_x;
+static int16_t map_center_y;
 
 static char map_locator[7];
 static int map_key_index = 0;
 static Map_Memory stored_log_entries[100] = {0};
 static int number_logged = 0;
-
-static double deg2rad(double deg);
-static double rad2deg(double rad);
 
 static float Station_Latitude, Station_Longitude;
 static float Map_Latitude, Map_Longitude;
@@ -75,6 +68,17 @@ static float QTH_Distance;
 static float QTH_Bearing;
 
 static File Log_File;
+
+// convert degrees to radians
+inline double deg2rad(double deg)
+{
+  return deg * (PI / 180.0);
+}
+
+inline double rad2deg(double rad)
+{
+  return (rad * 180) / PI;
+}
 
 static void make_date(void)
 {
@@ -141,26 +145,25 @@ static void draw_vector(float distance, float bearing, int size, int color)
 
   QTH_vector_magnitude = QTH_Distance / vector_scale;
 
-  plot_QTH_X = (center_x) + (int)(sin(QTH_Bearing* PI / 180) * QTH_vector_magnitude);
+  plot_QTH_X = (center_x) + (int)(sin(QTH_Bearing * PI / 180) * QTH_vector_magnitude);
   plot_QTH_Y = (center_y) - (int)(cos(QTH_Bearing * PI / 180) * QTH_vector_magnitude);
-
 
   switch (color)
   {
   case 0: // Yellow
-    tft.drawLine(plot_X,plot_Y, plot_QTH_X, plot_QTH_Y, YELLOW);
+    tft.drawLine(plot_X, plot_Y, plot_QTH_X, plot_QTH_Y, YELLOW);
     tft.drawCircleFill(plot_X, plot_Y, size, YELLOW);
     break;
   case 1: // White
-    tft.drawLine(plot_X,plot_Y, plot_QTH_X, plot_QTH_Y, WHITE);
+    tft.drawLine(plot_X, plot_Y, plot_QTH_X, plot_QTH_Y, WHITE);
     tft.drawCircleFill(plot_X, plot_Y, size, WHITE);
     break;
-  case 2:  //Green                                              
-    tft.drawLine(plot_X,plot_Y, plot_QTH_X, plot_QTH_Y, 0x0400); 
-     tft.drawCircleFill(plot_X, plot_Y, size, 0x0400);
+  case 2: // Green
+    tft.drawLine(plot_X, plot_Y, plot_QTH_X, plot_QTH_Y, 0x0400);
+    tft.drawCircleFill(plot_X, plot_Y, size, 0x0400);
     break;
   case 3: // Red
-    tft.drawLine(plot_X,plot_Y, plot_QTH_X, plot_QTH_Y, RED);
+    tft.drawLine(plot_X, plot_Y, plot_QTH_X, plot_QTH_Y, RED);
     tft.drawCircleFill(plot_X, plot_Y, size, RED);
     break;
   }
@@ -175,7 +178,6 @@ static double distance(double lat1, double lon1, double lat2, double lon2)
   double lon2r = deg2rad(lon2);
 
   return acos(sin(lat1r) * sin(lat2r) + cos(lat1r) * cos(lat2r) * cos(lon2r - lon1r)) * EARTH_RAD;
-
 }
 
 static float Target_Distance(const char *target)
@@ -297,7 +299,6 @@ void write_ADIF_Log()
   make_date();
 
   const char *freq = sBand_Data[BandIndex].display;
-  strcpy(display_frequency, freq);
 
   int offset = sprintf(log_line, "<call:%1u>%s ", num_chars(Target_Call), trim_front(Target_Call));
   int target_locator_len = num_chars(Target_Locator);
@@ -374,34 +375,34 @@ static void draw_stored_entries(void)
 void draw_map(int16_t index)
 {
   map_width = MapFiles[index].map_width;
-  map_heigth = MapFiles[index].map_heigth;
+  map_height = MapFiles[index].map_height;
   map_center_x = MapFiles[index].map_center_x;
   map_center_y = MapFiles[index].map_center_y;
 
   switch (index)
   {
   case 0:
-    drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)EM29_4000);
+    drawImage(map_width, map_height, map_center_x, map_center_y, (uint16_t *)EM29_4000);
     break;
 
   case 1:
-    drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)EM29_8000);
+    drawImage(map_width, map_height, map_center_x, map_center_y, (uint16_t *)EM29_8000);
     break;
 
   case 2:
-    drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)EM29_16000);
+    drawImage(map_width, map_height, map_center_x, map_center_y, (uint16_t *)EM29_16000);
     break;
 
   case 3:
-    drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)JM29_4000);
+    drawImage(map_width, map_height, map_center_x, map_center_y, (uint16_t *)JM29_4000);
     break;
 
   case 4:
-    drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)JM29_8000);
+    drawImage(map_width, map_height, map_center_x, map_center_y, (uint16_t *)JM29_8000);
     break;
 
   case 5:
-    drawImage(map_width, map_heigth, map_center_x, map_center_y, (uint16_t *)JM29_16000);
+    drawImage(map_width, map_height, map_center_x, map_center_y, (uint16_t *)JM29_16000);
     break;
   }
 
@@ -425,15 +426,4 @@ void set_Station_Coordinates()
   {
     Station_Latitude = Station_Longitude = 0.0;
   }
-}
-
-// convert degrees to radians
-double deg2rad(double deg)
-{
-  return deg * (PI / 180.0);
-}
-
-double rad2deg(double rad)
-{
-  return (rad * 180) / PI;
 }

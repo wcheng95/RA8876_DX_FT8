@@ -49,7 +49,6 @@ Decode new_decoded[20];
 static const char *blank = "                  "; // 18 spaces
 static char worked_qso_entries[MAX_QSO_ENTRIES][MAX_LINE_LEN] = {};
 static int num_qsos = 0;
-extern int was_txing;
 
 int message_limit = 10;
 
@@ -162,7 +161,7 @@ int ft8_decode(void)
 					}
 
 					received_RSL = atoi(ptr);
-					if (received_RSL < 30) // Prevents an 73 being decoded as a received RSL
+					if (received_RSL < 30) // Prevents a 73 being decoded as a received RSL
 					{
 						new_decoded[num_decoded].received_snr = received_RSL;
 					}
